@@ -5,12 +5,12 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "KEPALA_RUTAN") {
+  if (!session || session.user.role !== "kepala_rutan") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const kasi = await prisma.user.findMany({
-    where: { role: "KEPALA_SEKSI" },
+    where: { role: { in: ["kepala_seksi", "kepala"] } },
     select: {
       id: true,
       name: true,

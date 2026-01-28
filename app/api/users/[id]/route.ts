@@ -17,7 +17,7 @@ export async function DELETE(
     }
 
     // 2. Cek Otorisasi (Hanya KEPALA_RUTAN)
-    if (session.user.role !== "KEPALA_RUTAN") {
+    if (session.user.role !== "kepala_rutan") {
       return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
     }
 
@@ -41,9 +41,9 @@ export async function DELETE(
     }
 
     // 5. Proteksi Admin terakhir
-    if (userToDelete.role === "KEPALA_RUTAN") {
+    if (userToDelete.role === "kepala_rutan") {
       const adminCount = await prisma.user.count({
-        where: { role: "KEPALA_RUTAN" },
+        where: { role: "kepala_rutan" },
       });
       if (adminCount <= 1) {
         return NextResponse.json(

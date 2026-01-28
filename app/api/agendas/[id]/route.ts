@@ -49,7 +49,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "KEPALA_SEKSI") {
+    if (!session || session.user.role !== "kepala_seksi") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -102,7 +102,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "KEPALA_SEKSI") {
+    if (!session || session.user.role !== "kepala_seksi") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

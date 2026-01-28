@@ -68,8 +68,8 @@ export default function DashboardPage() {
     delegated: 0,
   });
 
-  const isKepalaRutan = session?.user?.role === "KEPALA_RUTAN";
-  const isKepalaSeksi = session?.user?.role === "KEPALA_SEKSI";
+  const isKepalaRutan = session?.user?.role === "kepala_rutan";
+  const isKepalaSeksi = session?.user?.role === "kepala_seksi";
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -92,9 +92,9 @@ export default function DashboardPage() {
 
       setStats({
         total: allAgendas.length,
-        pending: allAgendas.filter((a: Agenda) => a.status === "PENDING")
+        pending: allAgendas.filter((a: Agenda) => a.status === "pending")
           .length,
-        responded: allAgendas.filter((a: Agenda) => a.status === "RESPONDED")
+        responded: allAgendas.filter((a: Agenda) => a.status === "responded")
           .length,
         delegated: data.delegatedAgendas?.length || 0,
       });
@@ -143,10 +143,10 @@ export default function DashboardPage() {
                   <h3 className="text-lg font-semibold">{agenda.title}</h3>
                   <Badge
                     variant={
-                      agenda.status === "PENDING" ? "secondary" : "default"
+                      agenda.status === "pending" ? "secondary" : "default"
                     }
                   >
-                    {agenda.status === "PENDING"
+                    {agenda.status === "pending"
                       ? "Belum Direspons"
                       : "Sudah Direspons"}
                   </Badge>
@@ -207,10 +207,10 @@ export default function DashboardPage() {
                       className="text-wrap px-4 py-1 bg-black/5"
                       style={{ textWrap: "wrap" }}
                     >
-                      {agenda.response.responseType === "HADIR" && "✓ Hadir"}
-                      {agenda.response.responseType === "TIDAK_HADIR" &&
+                      {agenda.response.responseType === "hadir" && "✓ Hadir"}
+                      {agenda.response.responseType === "tidak_hadir" &&
                         "Tidak Hadir"}
-                      {agenda.response.responseType === "DIWAKILKAN" &&
+                      {agenda.response.responseType === "diwakilkan" &&
                         `Diwakilkan kepada ${agenda.response.delegateName}`}
                     </Badge>
                   </div>
@@ -361,10 +361,6 @@ export default function DashboardPage() {
               <Button onClick={() => router.push("/dashboard/agendas/create")}>
                 <Plus className="mr-2 h-4 w-4" />
                 Buat Agenda
-              </Button>
-              <Button onClick={() => router.push("/dashboard/agendas/create")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Tambah User
               </Button>
             </div>
           </CardHeader>

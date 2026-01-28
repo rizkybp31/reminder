@@ -28,7 +28,7 @@ const NavigationBar = () => {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const isKepalaRutan = session?.user?.role === "KEPALA_RUTAN";
+  const isKepalaRutan = session?.user?.role === "kepala_rutan";
 
   const handleLogout = async () => {
     await signOut({ redirect: false });

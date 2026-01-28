@@ -26,7 +26,7 @@ interface Agenda {
   title: string;
   startDateTime: string;
   endDateTime: string;
-  status: "PENDING" | "RESPONDED";
+  status: "pending" | "responded";
   location: string;
 }
 
@@ -103,7 +103,7 @@ export default function AgendaCalendarPage() {
                   <div>
                     <Badge
                       variant={
-                        selectedAgenda.status === "RESPONDED"
+                        selectedAgenda.status === "responded"
                           ? "default"
                           : "secondary"
                       }

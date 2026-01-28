@@ -38,7 +38,7 @@ export default function CreateUserPage() {
   });
 
   // Proteksi UI
-  if (session?.user?.role !== "KEPALA_RUTAN") {
+  if (session?.user?.role !== "kepala_rutan") {
     return (
       <div className="text-center py-20 text-muted-foreground">
         Anda tidak memiliki akses ke halaman ini
@@ -54,7 +54,7 @@ export default function CreateUserPage() {
       return;
     }
 
-    if (form.role === "KEPALA_SEKSI" && !form.seksiName) {
+    if (form.role === "kepala_seksi" && !form.seksiName) {
       toast.error("Nama seksi wajib diisi");
       return;
     }

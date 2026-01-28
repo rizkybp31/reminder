@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -30,6 +31,8 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null); // State untuk loading pada tombol delete spesifik
+
+  const router = useRouter();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -123,7 +126,9 @@ export default function UsersPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => alert(`Edit user ${user.name}`)}
+                            onClick={() =>
+                              router.push(`/dashboard/users/${user.id}/edit`)
+                            }
                           >
                             Edit
                           </Button>

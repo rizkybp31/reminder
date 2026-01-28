@@ -23,6 +23,7 @@ import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
 
 import { IoIosArrowDown } from "react-icons/io";
+import { toTitleCase } from "@/utils/toTitleCase";
 
 interface Agenda {
   id: string;
@@ -61,7 +62,6 @@ export default function AgendaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // 🔥 STATE DIPISAH (PENTING)
   const [responseType, setResponseType] = useState("");
   const [delegateEmail, setDelegateEmail] = useState("");
   const [delegateName, setDelegateName] = useState("");
@@ -69,7 +69,7 @@ export default function AgendaDetailPage() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const isKepalaRutan = session?.user?.role === "KEPALA_RUTAN";
+  const isKepalaRutan = session?.user?.role === "kepala_rutan";
 
   useEffect(() => {
     fetchAgenda();
@@ -101,8 +101,6 @@ export default function AgendaDetailPage() {
     setKepalaSeksiList(data);
   };
 
-  console.table(kepalaSeksiList);
-
   const handleDelegateChange = (email: string) => {
     const selected = kepalaSeksiList.find((k) => k.email === email);
     setDelegateEmail(email);
@@ -118,7 +116,7 @@ export default function AgendaDetailPage() {
       return;
     }
 
-    if (responseType === "DIWAKILKAN" && !delegateEmail) {
+    if (responseType === "diwakilkan" && !delegateEmail) {
       toast.error("Pilih Kepala Seksi yang mewakili");
       return;
     }
@@ -131,8 +129,8 @@ export default function AgendaDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           responseType,
-          delegateEmail: responseType === "DIWAKILKAN" ? delegateEmail : null,
-          delegateName: responseType === "DIWAKILKAN" ? delegateName : null,
+          delegateEmail: responseType === "diwakilkan" ? delegateEmail : null,
+          delegateName: responseType === "diwakilkan" ? delegateName : null,
           notes: notes || null,
         }),
       });
@@ -174,13 +172,12 @@ export default function AgendaDetailPage() {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* DETAIL AGENDA */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl">{agenda.title}</CardTitle>
                 <Badge>
-                  {agenda.status === "PENDING"
+                  {agenda.status === "pending"
                     ? "Belum Direspons"
                     : "Sudah Direspons"}
                 </Badge>
@@ -225,21 +222,21 @@ export default function AgendaDetailPage() {
                     value={responseType}
                     onValueChange={(v) => {
                       setResponseType(v);
-                      if (v !== "DIWAKILKAN") {
+                      if (v !== "diwakilkan") {
                         setDelegateEmail("");
                         setDelegateName("");
                       }
                     }}
                   >
-                    {["HADIR", "TIDAK_HADIR", "DIWAKILKAN"].map((v) => (
+                    {["hadir", "tidak_hadir", "diwakilkan"].map((v) => (
                       <div key={v} className="flex items-center gap-2">
                         <RadioGroupItem value={v} />
-                        <Label>{v.replace("_", " ")}</Label>
+                        <Label>{toTitleCase(v)}</Label>
                       </div>
                     ))}
                   </RadioGroup>
 
-                  {responseType === "DIWAKILKAN" && (
+                  {responseType === "diwakilkan" && (
                     <div className="relative">
                       <Label className="mb-2">Kepala Seksi</Label>
                       <button

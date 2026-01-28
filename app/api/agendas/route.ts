@@ -13,11 +13,11 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
-    const isKepalaRutan = session.user.role === "KEPALA_RUTAN";
+    const isKepalaRutan = session.user.role === "kepala_rutan";
 
     const where: any = {};
 
-    if (session.user.role === "KEPALA_SEKSI") {
+    if (session.user.role === "kepala_seksi") {
       // Kepala Seksi melihat:
       // 1. Agenda yang dia buat sendiri
       // 2. Agenda yang diwakilkan ke dia (delegateEmail = email dia)
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         {
           response: {
             delegateEmail: session.user.email,
-            responseType: "DIWAKILKAN",
+            responseType: "diwakilkan",
           },
         },
       ];
@@ -67,12 +67,12 @@ export async function GET(req: NextRequest) {
     let myAgendas = agendas;
     let delegatedAgendas: any[] = [];
 
-    if (session.user.role === "KEPALA_SEKSI") {
+    if (session.user.role === "kepala_seksi") {
       myAgendas = agendas.filter((a) => a.createdById === session.user.id);
       delegatedAgendas = agendas.filter(
         (a) =>
           a.response?.delegateEmail === session.user.email &&
-          a.response?.responseType === "DIWAKILKAN",
+          a.response?.responseType === "diwakilkan",
       );
     }
 

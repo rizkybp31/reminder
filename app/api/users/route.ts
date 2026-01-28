@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Only Kepala Rutan can access
-    if (session.user.role !== "KEPALA_RUTAN") {
+    if (session.user.role !== "kepala_rutan") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Only Kepala Rutan can create users
-    if (session.user.role !== "KEPALA_RUTAN") {
+    if (session.user.role !== "kepala_rutan") {
       return NextResponse.json(
         { error: "Hanya Kepala Rutan yang dapat menambah user" },
         { status: 403 },
@@ -89,12 +89,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Validasi role
-    if (!["KEPALA_RUTAN", "KEPALA_SEKSI"].includes(role)) {
+    if (!["kepala_rutan", "kepala_seksi"].includes(role)) {
       return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
     }
 
     // Jika role KEPALA_SEKSI, seksiName wajib diisi
-    if (role === "KEPALA_SEKSI" && !seksiName) {
+    if (role === "kepala_seksi" && !seksiName) {
       return NextResponse.json(
         { error: "Nama seksi harus diisi untuk Kepala Seksi" },
         { status: 400 },
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         email,
         password: hashedPassword,
         role,
-        seksiName: role === "KEPALA_SEKSI" ? seksiName : null,
+        seksiName: role === "kepala_seksi" ? seksiName : null,
       },
       select: {
         id: true,
