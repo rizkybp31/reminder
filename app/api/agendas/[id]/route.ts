@@ -45,7 +45,7 @@ export async function GET(
 // PUT - Update agenda (Kepala Seksi only, and only if not responded)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -54,7 +54,7 @@ export async function PUT(
     }
 
     const agenda = await prisma.agenda.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: { response: true },
     });
 
@@ -75,7 +75,7 @@ export async function PUT(
 
     const body = await req.json();
     const updatedAgenda = await prisma.agenda.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         title: body.title,
         description: body.description,
