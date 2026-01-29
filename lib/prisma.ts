@@ -1,31 +1,33 @@
 import "dotenv/config";
-import fs from "fs";
-import path from "path";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
-
-// Baca file sertifikat SSL
-// Pastikan path-nya benar menuju file .pem kamu
-// const sslCert = fs.readFileSync(path.join(process.cwd(), "ca.pem"));
-// const sslCert = fs.readFileSync(path.join(process.cwd(), "ca.pem"));
 
 const sslCert = process.env.DATABASE_CA_CERT?.replace(/\\n/g, "\n");
 
 console.log("SSL CERT LENGTH:", sslCert?.length);
 
-export const prisma = new PrismaClient({
-  adapter: new PrismaMariaDb({
-    host: process.env.DATABASE_HOST!,
-    user: process.env.DATABASE_USER!,
-    password: process.env.DATABASE_PASSWORD!,
-    database: process.env.DATABASE_NAME!,
-    port: Number(process.env.DATABASE_PORT),
-    connectionLimit: 3, // PENTING untuk Vercel
-    ssl: {
-      ca: sslCert,
-      rejectUnauthorized: true,
-      servername: process.env.DATABASE_HOST, // 🔥 INI KUNCI UTAMA
-    },
-  }),
-});
-export const prisma = new PrismaClient({ adapter });
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    adapter: new PrismaMariaDb({
+      host: process.env.DATABASE_HOST!,
+      user: process.env.DATABASE_USER!,
+      password: process.env.DATABASE_PASSWORD!,
+      database: process.env.DATABASE_NAME!,
+      port: Number(process.env.DATABASE_PORT),
+      connectionLimit: 3, // aman untuk Vercel
+      ssl: {
+        ca: sslCert,
+        rejectUnauthorized: true,
+        servername: process.env.DATABASE_HOST, // WAJIB untuk Aiven
+      } as any,
+    }),
+  });
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
