@@ -18,52 +18,42 @@ export const authOptions: NextAuthOptions = {
           type: "password",
         },
       },
+
       async authorize(credentials) {
-        // Validasi input
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email dan password harus diisi");
+          return null;
         }
 
-        // Trim inputs to avoid whitespace issues
         const email = credentials.email.trim();
         const password = credentials.password.trim();
 
-        console.log("passed credentials:", { email, password }); // Debugging log
+        console.log("LOGIN ATTEMPT:", email);
 
-        try {
-          // Cari user di database
-          const user = await prisma.user.findUnique({
-            where: {
-              email: email,
-            },
-          });
+        const user = await prisma.user.findUnique({
+          where: { email },
+        });
 
-          console.log("Found user:", user); // Debugging log
+        console.log("USER FOUND:", !!user);
 
-          // User tidak ditemukan
-          if (!user) {
-            throw new Error("Email atau password salah");
-          }
-
-          // Verifikasi password
-          const isPasswordValid = await bcrypt.compare(password, user.password);
-
-          if (!isPasswordValid) {
-            throw new Error("Email atau password salah");
-          }
-
-          // Return user object (akan masuk ke JWT)
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            seksiName: user.seksiName ?? undefined, // Fixed syntax error
-          };
-        } catch (error) {
-          console.error("Auth error:", error); // Add logging for debugging
-          throw new Error("Authentication failed");
+        if (!user) {
+          return null;
         }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        console.log("PASSWORD VALID:", isPasswordValid);
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          seksiName: user.seksiName ?? undefined,
+        };
       },
     }),
   ],
