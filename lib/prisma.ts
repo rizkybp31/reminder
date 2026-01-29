@@ -11,6 +11,8 @@ import { PrismaClient } from "@/generated/prisma/client";
 
 const sslCert = process.env.DATABASE_CA_CERT?.replace(/\\n/g, "\n");
 
+console.log("SSL CERT LENGTH:", sslCert?.length);
+
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST,
   user: process.env.DATABASE_USER,
