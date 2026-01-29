@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validasi role
-    if (!["kepala_rutan", "kepala_seksi"].includes(role)) {
+    if (!["kepala_rutan", "kepala_seksi", "kepala"].includes(role)) {
       return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
     }
 
