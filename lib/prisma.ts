@@ -2,7 +2,7 @@ import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 
-const sslCert = process.env.DATABASE_CA_CERT;
+const sslCert = process.env.DATABASE_CA_CERT?.replace(/\\n/g, "\n");
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
