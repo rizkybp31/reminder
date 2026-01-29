@@ -17,13 +17,18 @@ export const prisma =
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
       port: Number(process.env.DATABASE_PORT),
-      connectionLimit: 1,
-      ssl: {
-        ca: sslCert,
-        rejectUnauthorized: true,
-      },
+      connectionLimit: 10,
+      ssl: sslCert
+        ? {
+            ca: sslCert,
+            rejectUnauthorized: true,
+          }
+        : undefined,
     }),
-    log: ["error"],
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
   });
 
 if (process.env.NODE_ENV !== "production") {
