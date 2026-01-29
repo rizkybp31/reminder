@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner"; // Ganti useToast dengan Sonner
 import { Loader2 } from "lucide-react"; // Untuk icon loading
+import { toTitleCase } from "@/utils/toTitleCase";
 
 interface User {
   id: string;
@@ -116,7 +117,7 @@ export default function UsersPage() {
                       <td className="border px-3 py-2">{user.name}</td>
                       <td className="border px-3 py-2">{user.email}</td>
                       <td className="border px-3 py-2 text-center">
-                        {user.role}
+                        {toTitleCase(user.role)}
                       </td>
                       <td className="border px-3 py-2 text-center">
                         {user.seksiName ?? "-"}
@@ -137,7 +138,10 @@ export default function UsersPage() {
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                disabled={deletingId === user.id} // Disable tombol saat loading
+                                disabled={
+                                  deletingId === user.id ||
+                                  user.role === "kepala_rutan"
+                                } // Disable tombol saat loading
                               >
                                 {deletingId === user.id ? (
                                   <>

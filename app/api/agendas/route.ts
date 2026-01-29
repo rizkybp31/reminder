@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma, StatusAgenda } from "@/generated/prisma/client";
 
-// GET - Fetch all agendas
+// HANDLER UNTUK GET (Fetch Agendas)
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -11,16 +12,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Mengambil query parameters
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
-    const isKepalaRutan = session.user.role === "kepala_rutan";
 
-    const where: any = {};
+    const where: Prisma.AgendaWhereInput = {};
 
     if (session.user.role === "kepala_seksi") {
-      // Kepala Seksi melihat:
-      // 1. Agenda yang dia buat sendiri
-      // 2. Agenda yang diwakilkan ke dia (delegateEmail = email dia)
       where.OR = [
         { createdById: session.user.id },
         {
@@ -31,11 +29,9 @@ export async function GET(req: NextRequest) {
         },
       ];
     }
-    // Kepala Rutan melihat semua agenda (no filter)
 
-    // Filter berdasarkan status jika ada
     if (status && status !== "all") {
-      where.status = status.toUpperCase();
+      where.status = status.toUpperCase() as StatusAgenda;
     }
 
     const agendas = await prisma.agenda.findMany({
@@ -63,16 +59,16 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Categorize agendas untuk Kepala Seksi
     let myAgendas = agendas;
-    let delegatedAgendas: any[] = [];
+    let delegatedAgendas: typeof agendas = [];
 
     if (session.user.role === "kepala_seksi") {
       myAgendas = agendas.filter((a) => a.createdById === session.user.id);
       delegatedAgendas = agendas.filter(
         (a) =>
-          a.response?.delegateEmail === session.user.email &&
-          a.response?.responseType === "diwakilkan",
+          a.response &&
+          a.response.delegateEmail === session.user.email &&
+          a.response.responseType === "diwakilkan",
       );
     }
 
@@ -89,12 +85,27 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST - Create new agenda (Kepala Seksi only)
+// HANDLER UNTUK POST (Create Agenda)
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const body = await req.json();
+    if (session.user.role !== "kepala_seksi") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await req.json(); // Di App Router, gunakan req.json()
+
+    // Validasi sederhana
+    if (!body.title || !body.startDateTime || !body.endDateTime) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+    }
 
     const agenda = await prisma.agenda.create({
       data: {
@@ -103,17 +114,20 @@ export async function POST(req: NextRequest) {
         location: body.location,
         startDateTime: new Date(body.startDateTime),
         endDateTime: new Date(body.endDateTime),
-        createdById: session!.user.id,
+        createdById: session.user.id,
       },
     });
 
-    return NextResponse.json({
-      ...agenda,
-      startDateTime: agenda.startDateTime.toISOString(),
-      endDateTime: agenda.endDateTime.toISOString(),
-    });
+    return NextResponse.json(
+      {
+        ...agenda,
+        startDateTime: agenda.startDateTime.toISOString(),
+        endDateTime: agenda.endDateTime.toISOString(),
+      },
+      { status: 201 },
+    );
   } catch (error) {
-    console.error(error);
+    console.error("Error creating agenda:", error);
     return NextResponse.json(
       { error: "Failed to create agenda" },
       { status: 500 },

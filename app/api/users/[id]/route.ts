@@ -55,8 +55,13 @@ export async function DELETE(
 
     await prisma.user.delete({ where: { id: userId } });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error.code === "P2003") {
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2003"
+    ) {
       return NextResponse.json(
         { error: "User ini memiliki data terkait (Foreign Key Constraint)" },
         { status: 400 },

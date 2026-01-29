@@ -1,4 +1,3 @@
-// File: src/lib/auth.ts
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
@@ -25,36 +24,46 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email dan password harus diisi");
         }
 
-        // Cari user di database
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        });
+        // Trim inputs to avoid whitespace issues
+        const email = credentials.email.trim();
+        const password = credentials.password.trim();
 
-        // User tidak ditemukan
-        if (!user) {
-          throw new Error("Email atau password salah");
+        console.log("passed credentials:", { email, password }); // Debugging log
+
+        try {
+          // Cari user di database
+          const user = await prisma.user.findUnique({
+            where: {
+              email: email,
+            },
+          });
+
+          console.log("Found user:", user); // Debugging log
+
+          // User tidak ditemukan
+          if (!user) {
+            throw new Error("Email atau password salah");
+          }
+
+          // Verifikasi password
+          const isPasswordValid = await bcrypt.compare(password, user.password);
+
+          if (!isPasswordValid) {
+            throw new Error("Email atau password salah");
+          }
+
+          // Return user object (akan masuk ke JWT)
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            seksiName: user.seksiName ?? undefined, // Fixed syntax error
+          };
+        } catch (error) {
+          console.error("Auth error:", error); // Add logging for debugging
+          throw new Error("Authentication failed");
         }
-
-        // Verifikasi password
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password,
-        );
-
-        if (!isPasswordValid) {
-          throw new Error("Email atau password salah");
-        }
-
-        // Return user object (akan masuk ke JWT)
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          seksiName: user.seksiName ?? undefined,
-        };
       },
     }),
   ],
@@ -97,7 +106,4 @@ export const authOptions: NextAuthOptions = {
 
   // Secret untuk encrypt JWT
   secret: process.env.NEXTAUTH_SECRET,
-
-  // Debug mode (aktifkan di development)
-  debug: process.env.NODE_ENV === "development",
 };

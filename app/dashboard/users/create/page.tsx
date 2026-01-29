@@ -33,6 +33,7 @@ export default function CreateUserPage() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "",
     seksiName: "",
   });
@@ -49,8 +50,20 @@ export default function CreateUserPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log("Submitting form:", form); // Debugging log
+
     if (!form.name || !form.email || !form.password || !form.role) {
       toast.error("Lengkapi semua field wajib");
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      toast.error("Konfirmasi password tidak cocok!");
+      return;
+    }
+
+    if (form.password.length < 6) {
+      toast.error("Password minimal 6 karakter");
       return;
     }
 
@@ -76,7 +89,7 @@ export default function CreateUserPage() {
       }
 
       toast.success("User berhasil ditambahkan");
-      router.push("/dashboard");
+      router.push("/dashboard/users");
       router.refresh();
     } catch (error) {
       toast.error("Terjadi kesalahan");
@@ -118,6 +131,35 @@ export default function CreateUserPage() {
               />
             </div>
 
+            {/* Role */}
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select
+                value={form.role}
+                onValueChange={(value) => setForm({ ...form, role: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kepala_rutan">Kepala Rutan</SelectItem>
+                  <SelectItem value="kepala_seksi">Kepala Seksi</SelectItem>
+                  <SelectItem value="kepala">Kepala</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nama Seksi</Label>
+              <Input
+                placeholder="Contoh: Keamanan"
+                value={form.seksiName}
+                onChange={(e) =>
+                  setForm({ ...form, seksiName: e.target.value })
+                }
+              />
+            </div>
+
             {/* Password */}
             <div className="space-y-2">
               <Label>Password</Label>
@@ -129,14 +171,15 @@ export default function CreateUserPage() {
               />
             </div>
 
-            <Separator />
+            {/* Confirm Password */}
             <div className="space-y-2">
-              <Label>Nama Seksi</Label>
+              <Label>Konfirmasi Password</Label>
               <Input
-                placeholder="Contoh: Keamanan"
-                value={form.seksiName}
+                type="password"
+                placeholder="Konfirmasi password"
+                value={form.confirmPassword}
                 onChange={(e) =>
-                  setForm({ ...form, seksiName: e.target.value })
+                  setForm({ ...form, confirmPassword: e.target.value })
                 }
               />
             </div>

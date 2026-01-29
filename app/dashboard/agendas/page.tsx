@@ -35,10 +35,6 @@ export default function AgendaCalendarPage() {
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
 
-  useEffect(() => {
-    fetchAgendas();
-  }, []);
-
   const fetchAgendas = async () => {
     try {
       const res = await fetch("/api/agendas");
@@ -48,6 +44,12 @@ export default function AgendaCalendarPage() {
       toast.error("Gagal memuat agenda");
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      await fetchAgendas();
+    })();
+  }, []);
 
   const events = agendas.map((agenda) => ({
     id: agenda.id,

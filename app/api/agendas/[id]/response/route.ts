@@ -6,10 +6,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: "Invalid agenda id" }, { status: 400 });
@@ -76,7 +76,7 @@ export async function POST(
 
       await prisma.agenda.update({
         where: { id },
-        data: { status: "RESPONDED" },
+        data: { status: "responded" },
       });
     }
 

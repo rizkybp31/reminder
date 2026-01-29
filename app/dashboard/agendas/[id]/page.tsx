@@ -141,8 +141,8 @@ export default function AgendaDetailPage() {
       toast.success("Respons berhasil disimpan");
       router.push("/dashboard");
       router.refresh();
-    } catch (err: any) {
-      toast.error(err.message || "Gagal menyimpan respons");
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Gagal menyimpan respons");
     } finally {
       setSubmitting(false);
     }

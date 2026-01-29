@@ -14,7 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar,
   CheckCircle,
@@ -26,10 +25,11 @@ import {
   Eye,
   Plus,
   UserCheck,
-  TextWrap,
+  LayoutDashboard,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface Agenda {
   id: string;
@@ -79,49 +79,61 @@ export default function DashboardPage() {
 
   const fetchAgendas = async () => {
     try {
+      setLoading(true);
       const res = await fetch("/api/agendas");
+
+      if (!res.ok) {
+        if (res.status === 401) return router.push("/login");
+        throw new Error("Gagal mengambil data");
+      }
+
       const data = await res.json();
 
-      setAgendas(data.agendas || []);
-      setDelegatedAgendas(data.delegatedAgendas || []);
+      const myOwn = data.agendas || [];
+      const forMe = data.delegatedAgendas || [];
 
-      const allAgendas = [
-        ...(data.agendas || []),
-        ...(data.delegatedAgendas || []),
-      ];
+      console.log("My Agendas:", myOwn.length);
+      console.log("Delegated Agendas:", forMe.length);
 
+      setAgendas(myOwn);
+      setDelegatedAgendas(forMe);
+
+      // Logika statistik baru: hitung unique agenda berdasarkan ID
+      const uniqueAgendaIds = new Set<string>();
+      const allAgendas = [...myOwn, ...forMe];
+
+      allAgendas.forEach((agenda) => uniqueAgendaIds.add(agenda.id));
+
+      // Hitung statistik berdasarkan unique agenda
+      const uniqueAgendas = Array.from(uniqueAgendaIds).map(
+        (id) => allAgendas.find((a) => a.id === id)!,
+      );
       setStats({
-        total: allAgendas.length,
-        pending: allAgendas.filter((a: Agenda) => a.status === "pending")
-          .length,
-        responded: allAgendas.filter((a: Agenda) => a.status === "responded")
-          .length,
-        delegated: data.delegatedAgendas?.length || 0,
+        total: uniqueAgendas.length, // Total unique agenda
+        pending: uniqueAgendas.filter((a) => a.status === "pending").length,
+        responded: uniqueAgendas.filter(
+          (a) => a.status === "responded" || a.response,
+        ).length,
+        delegated: forMe.length, // Jumlah agenda yang didelegasikan ke user ini
       });
     } catch (error) {
-      console.error("Error fetching agendas:", error);
+      console.error(error);
+      toast.error("Terjadi kesalahan saat memuat agenda");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus agenda ini?")) return;
-
+    if (!confirm("Hapus agenda ini?")) return;
     try {
-      const res = await fetch(`/api/agendas/${id}`, {
-        method: "DELETE",
-      });
-
+      const res = await fetch(`/api/agendas/${id}`, { method: "DELETE" });
       if (res.ok) {
+        toast.success("Agenda dihapus");
         fetchAgendas();
-      } else {
-        const data = await res.json();
-        alert(data.error || "Gagal menghapus agenda");
       }
-    } catch (error) {
-      console.error("Error deleting agenda:", error);
-      alert("Terjadi kesalahan");
+    } catch {
+      toast.error("Gagal menghapus");
     }
   };
 
@@ -132,91 +144,68 @@ export default function DashboardPage() {
     agenda: Agenda;
     isDelegated?: boolean;
   }) => (
-    <Card key={agenda.id} className="hover:shadow-md transition-shadow">
+    <Card
+      key={agenda.id}
+      className={`hover:shadow-md transition-all ${isDelegated ? "border-l-4 border-l-blue-500 shadow-sm" : ""}`}
+    >
       <CardContent className="pt-6">
-        <div className="flex justify-between items-start flex-col md:flex-row">
-          <div className="flex-1 space-y-4 text-wrap w-full">
-            {/* Header */}
-            <div className="flex items-start gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <h3 className="text-lg font-semibold">{agenda.title}</h3>
-                  <Badge
-                    variant={
-                      agenda.status === "pending" ? "secondary" : "default"
-                    }
-                  >
-                    {agenda.status === "pending"
-                      ? "Belum Direspons"
-                      : "Sudah Direspons"}
-                  </Badge>
-                  {isDelegated && (
-                    <Badge
-                      variant="outline"
-                      className="bg-blue-50 text-blue-700 border-blue-200"
-                    >
-                      <UserCheck className="w-3 h-3 mr-1" />
-                      Diwakilkan
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {agenda.description}
-                </p>
+        <div className="flex flex-col md:flex-row justify-between gap-4">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-lg font-bold text-slate-800">
+                {agenda.title}
+              </h3>
+              <Badge
+                variant={agenda.status === "PENDING" ? "secondary" : "default"}
+              >
+                {agenda.status === "PENDING" ? "Menunggu" : "Selesai"}
+              </Badge>
+              {isDelegated && (
+                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
+                  <UserCheck className="w-3 h-3 mr-1" /> Tugas Delegasi
+                </Badge>
+              )}
+            </div>
+
+            <p className="text-sm text-slate-600 line-clamp-2">
+              {agenda.description}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-500">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>
+                  {format(new Date(agenda.startDateTime), "PPP p", {
+                    locale: id,
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                <span>{agenda.location}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span>
+                  {agenda.createdBy?.name} ({agenda.createdBy?.seksiName})
+                </span>
               </div>
             </div>
 
-            {/* Info Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <p className="font-medium">
-                  {format(
-                    new Date(agenda.startDateTime),
-                    "dd MMMM yyyy, HH:mm",
-                    { locale: id },
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <p className="font-medium">{agenda.location}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">{agenda.createdBy?.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {agenda.createdBy?.seksiName}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Response */}
             {agenda.response && (
-              <div>
-                <Separator />
-                <div className="bg-muted rounded-lg p-4 w-full mt-3">
-                  <p className="text-sm font-medium mb-2 text-wrap">
-                    Response dari {agenda.response.user.name}:
-                  </p>
-                  <div className="flex items-center gap-2 w-fit">
-                    <Badge
-                      variant="outline"
-                      className="text-wrap px-4 py-1 bg-black/5"
-                      style={{ textWrap: "wrap" }}
-                    >
-                      {agenda.response.responseType === "hadir" && "✓ Hadir"}
-                      {agenda.response.responseType === "tidak_hadir" &&
-                        "Tidak Hadir"}
-                      {agenda.response.responseType === "diwakilkan" &&
-                        `Diwakilkan kepada ${agenda.response.delegateName}`}
-                    </Badge>
-                  </div>
+              <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
+                <p className="text-xs font-semibold uppercase text-slate-400 mb-1">
+                  Status Respons
+                </p>
+                <div className="text-sm">
+                  <span className="font-medium text-slate-700">
+                    {agenda.response.responseType === "diwakilkan"
+                      ? `Diwakilkan ke: ${agenda.response.delegateName}`
+                      : `Keputusan: ${agenda.response.responseType}`}
+                  </span>
                   {agenda.response.notes && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Catatan: {agenda.response.notes}
+                    <p className="italic text-slate-500 mt-1">
+                      {`"${agenda.response.notes}"`}
                     </p>
                   )}
                 </div>
@@ -224,39 +213,43 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-2 ml-4">
-            {isKepalaRutan ? (
+          <div className="flex md:flex-col gap-2 justify-end">
+            {isDelegated ? (
+              // Agenda yang didelegasikan: hanya tombol detail
               <Button
-                className="mt-3"
                 size="sm"
                 onClick={() => router.push(`/dashboard/agendas/${agenda.id}`)}
               >
-                <Eye className="mr-2 h-4 w-4" />
-                Respons
+                <Eye className="w-4 h-4 mr-2" /> Detail
+              </Button>
+            ) : isKepalaRutan ? (
+              // Kepala Rutan: hanya tombol detail
+              <Button
+                size="sm"
+                onClick={() => router.push(`/dashboard/agendas/${agenda.id}`)}
+              >
+                <Eye className="w-4 h-4 mr-2" /> Detail
               </Button>
             ) : (
-              !agenda.response &&
-              !isDelegated && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      router.push(`/dashboard/agendas/${agenda.id}/edit`)
-                    }
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(agenda.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
-              )
+              // User lain: tombol edit dan delete untuk agenda miliknya
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    router.push(`/dashboard/agendas/${agenda.id}/edit`)
+                  }
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(agenda.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -264,180 +257,153 @@ export default function DashboardPage() {
     </Card>
   );
 
-  if (status === "loading" || loading) {
+  if (loading)
     return (
       <DashboardLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+          <p className="text-slate-500 animate-pulse">Memuat data agenda...</p>
         </div>
       </DashboardLayout>
     );
-  }
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Agenda
-              </CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">
-                Semua agenda yang ada
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Belum Direspons
-              </CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {stats.pending}
-              </div>
-              <p className="text-xs text-muted-foreground">Menunggu respons</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Sudah Direspons
-              </CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {stats.responded}
-              </div>
-              <p className="text-xs text-muted-foreground">Agenda selesai</p>
-            </CardContent>
-          </Card>
-
-          {isKepalaSeksi && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Diwakilkan
-                </CardTitle>
-                <UserCheck className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
-                  {stats.delegated}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Agenda untuk Anda
-                </p>
-              </CardContent>
-            </Card>
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              Ringkasan Dashboard
+            </h1>
+            <p className="text-slate-500">
+              Selamat datang kembali, {session?.user?.name}
+            </p>
+          </div>
+          {!isKepalaRutan && (
+            <Button
+              onClick={() => router.push("/dashboard/agendas/create")}
+              className="shadow-lg shadow-primary/20"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Buat Agenda Baru
+            </Button>
           )}
         </div>
 
-        {/* Agendas with Tabs */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>
-                  {isKepalaRutan ? "Daftar Agenda" : "Agenda Saya"}
-                </CardTitle>
-                <CardDescription>
-                  {isKepalaRutan
-                    ? "Semua agenda dari berbagai seksi"
-                    : "Agenda yang Anda buat dan diwakilkan"}
-                </CardDescription>
-              </div>
-              <Button onClick={() => router.push("/dashboard/agendas/create")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Buat Agenda
-              </Button>
+        {/* Stats Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Agenda"
+            value={stats.total}
+            icon={<LayoutDashboard />}
+            desc="Semua agenda unik"
+          />
+          <StatCard
+            title="Pending"
+            value={stats.pending}
+            icon={<Clock />}
+            desc="Butuh respons"
+            color="text-orange-600"
+          />
+          <StatCard
+            title="Selesai"
+            value={stats.responded}
+            icon={<CheckCircle />}
+            desc="Sudah direspons"
+            color="text-green-600"
+          />
+          {(isKepalaSeksi || isKepalaRutan) && (
+            <StatCard
+              title="Delegasi"
+              value={stats.delegated}
+              icon={<UserCheck />}
+              desc="Tugas untuk Anda"
+              color="text-blue-600"
+            />
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Main Content List */}
+        <div className="space-y-10">
+          {/* Section 1: Semua Agenda (Untuk Semua User) */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-1 bg-primary rounded-full" />
+              <h2 className="text-xl font-semibold">Semua Agenda</h2>
             </div>
-          </CardHeader>
-          <CardContent>
-            {isKepalaSeksi && delegatedAgendas.length > 0 ? (
-              <Tabs defaultValue="my-agendas" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="my-agendas">
-                    Agenda Saya ({agendas.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="delegated">
-                    Diwakilkan ({delegatedAgendas.length})
-                  </TabsTrigger>
-                </TabsList>
+            <div className="grid gap-4">
+              {agendas.length > 0 ? (
+                agendas.map((a) => <AgendaCard key={a.id} agenda={a} />)
+              ) : (
+                <EmptyState message="Belum ada agenda yang dibuat." />
+              )}
+            </div>
+          </section>
 
-                <TabsContent value="my-agendas" className="space-y-4">
-                  {agendas.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Calendar className="mx-auto h-12 w-12 text-muted-foreground opacity-20" />
-                      <h3 className="mt-4 text-lg font-semibold">
-                        Belum ada agenda
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Mulai dengan membuat agenda pertama Anda
-                      </p>
-                      <Button
-                        className="mt-4"
-                        onClick={() => router.push("/dashboard/agendas/create")}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Buat Agenda Pertama
-                      </Button>
-                    </div>
-                  ) : (
-                    agendas.map((agenda) => (
-                      <AgendaCard key={agenda.id} agenda={agenda} />
-                    ))
-                  )}
-                </TabsContent>
-
-                <TabsContent value="delegated" className="space-y-4">
-                  {delegatedAgendas.map((agenda) => (
-                    <AgendaCard key={agenda.id} agenda={agenda} isDelegated />
-                  ))}
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <div className="space-y-4">
-                {agendas.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Calendar className="mx-auto h-12 w-12 text-muted-foreground opacity-20" />
-                    <h3 className="mt-4 text-lg font-semibold">
-                      Belum ada agenda
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {isKepalaRutan
-                        ? "Belum ada agenda yang dibuat"
-                        : "Mulai dengan membuat agenda pertama Anda"}
-                    </p>
-                    <Button
-                      className="mt-4"
-                      onClick={() => router.push("/dashboard/agendas/create")}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Buat Agenda Pertama
-                    </Button>
-                  </div>
-                ) : (
-                  agendas.map((agenda) => (
-                    <AgendaCard key={agenda.id} agenda={agenda} />
-                  ))
-                )}
+          {/* Section 2: Agenda Diwakilkan (Muncul jika ada agenda yang didelegasikan) */}
+          {delegatedAgendas.length > 0 && (
+            <section className="space-y-4 pt-4">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-1 bg-blue-500 rounded-full" />
+                <h2 className="text-xl font-semibold text-blue-900">
+                  Agenda Diwakilkan Ke Saya
+                </h2>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <div className="grid gap-4">
+                {delegatedAgendas.map((a) => (
+                  <AgendaCard
+                    key={`delegated-${a.id}`}
+                    agenda={a}
+                    isDelegated
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+// --- Helper Components ---
+
+function StatCard({
+  title,
+  value,
+  icon,
+  desc,
+  color = "",
+}: {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  desc: string;
+  color?: string;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-slate-500">
+          {title}
+        </CardTitle>
+        <div className="text-slate-400">{icon}</div>
+      </CardHeader>
+      <CardContent>
+        <div className={`text-3xl font-bold ${color}`}>{value}</div>
+        <p className="text-xs text-slate-400 mt-1">{desc}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="text-center py-12 border-2 border-dashed rounded-xl border-slate-200">
+      <Calendar className="mx-auto h-10 w-10 text-slate-300 mb-3" />
+      <p className="text-slate-500">{message}</p>
+    </div>
   );
 }

@@ -54,8 +54,8 @@ const CreateAgenda = () => {
       toast.success("Agenda berhasil dibuat");
       router.push("/dashboard");
       router.refresh();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error((err as Error).message);
     } finally {
       setLoading(false);
     }
