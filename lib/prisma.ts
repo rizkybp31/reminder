@@ -9,9 +9,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 // const sslCert = fs.readFileSync(path.join(process.cwd(), "ca.pem"));
 // const sslCert = fs.readFileSync(path.join(process.cwd(), "ca.pem"));
 
-const sslCert = Buffer.from(
-  process.env.DATABASE_CA_CERT!.replace(/\\n/g, "\n"),
-);
+const sslCert = process.env.DATABASE_CA_CERT?.replace(/\\n/g, "\n");
 
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST,
