@@ -1,11 +1,23 @@
 import "dotenv/config";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
-const sslCert = process.env.DATABASE_CA_CERT?.replace(/\\n/g, "\n");
+// 1. Buat koneksi pool ke PostgreSQL
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Supabase memerlukan SSL.
+  // Jika lokal (development) tidak pakai SSL, bisa gunakan kondisi.
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
+});
 
-console.log("SSL CERT LENGTH:", sslCert?.length);
+// 2. Inisialisasi adapter
+const adapter = new PrismaPg(pool);
 
+// 3. Buat instance PrismaClient
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
@@ -13,19 +25,11 @@ const globalForPrisma = globalThis as unknown as {
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter: new PrismaMariaDb({
-      host: process.env.DATABASE_HOST!,
-      user: process.env.DATABASE_USER!,
-      password: process.env.DATABASE_PASSWORD!,
-      database: process.env.DATABASE_NAME!,
-      port: Number(process.env.DATABASE_PORT),
-      connectionLimit: 3, // aman untuk Vercel
-      ssl: {
-        ca: sslCert,
-        rejectUnauthorized: true,
-        servername: process.env.DATABASE_HOST, // WAJIB untuk Aiven
-      } as any,
-    }),
+    adapter,
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
   });
 
 if (process.env.NODE_ENV !== "production") {
