@@ -6,7 +6,9 @@ import { PrismaClient } from "@/generated/prisma/client";
 
 // Baca file sertifikat SSL
 // Pastikan path-nya benar menuju file .pem kamu
-const sslCert = fs.readFileSync(path.join(process.cwd(), "ca.pem"));
+// const sslCert = fs.readFileSync(path.join(process.cwd(), "ca.pem"));
+
+const sslCert = process.env.DATABASE_CA_CERT;
 
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST,
