@@ -13,18 +13,19 @@ const sslCert = process.env.DATABASE_CA_CERT?.replace(/\\n/g, "\n");
 
 console.log("SSL CERT LENGTH:", sslCert?.length);
 
-const adapter = new PrismaMariaDb({
-  host: process.env.DATABASE_HOST,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
-  port: Number(process.env.DATABASE_PORT) || 3306,
-  connectionLimit: 10,
-  // Masukkan konfigurasi SSL di sini
-  ssl: {
-    ca: sslCert,
-    rejectUnauthorized: true, // Pastikan true agar benar-benar terverifikasi
-  },
+export const prisma = new PrismaClient({
+  adapter: new PrismaMariaDb({
+    host: process.env.DATABASE_HOST!,
+    user: process.env.DATABASE_USER!,
+    password: process.env.DATABASE_PASSWORD!,
+    database: process.env.DATABASE_NAME!,
+    port: Number(process.env.DATABASE_PORT),
+    connectionLimit: 3, // PENTING untuk Vercel
+    ssl: {
+      ca: sslCert,
+      rejectUnauthorized: true,
+      servername: process.env.DATABASE_HOST, // 🔥 INI KUNCI UTAMA
+    },
+  }),
 });
-
 export const prisma = new PrismaClient({ adapter });
