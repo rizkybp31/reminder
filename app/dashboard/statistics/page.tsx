@@ -1,9 +1,155 @@
-const Statistik = () => {
-  return (
-    <div>
-      <h1>Ini halaman statistik</h1>
-    </div>
-  );
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+type Statistik = {
+  agenda: {
+    total: number;
+    pending: number;
+    responded: number;
+  };
+  response: {
+    total: number;
+    hadir: number;
+    tidakHadir: number;
+    diwakilkan: number;
+  };
 };
 
-export default Statistik;
+export default function StatistikPage() {
+  const [data, setData] = useState<Statistik | null>(null);
+
+  useEffect(() => {
+    fetch("/api/statistic")
+      .then((res) => res.json())
+      .then(setData)
+      .catch(console.error);
+  }, []);
+
+  if (!data) return <div>Memuat statistik...</div>;
+
+  const agendaProgress = (data.agenda.responded / data.agenda.total) * 100 || 0;
+
+  const hadirProgress = (data.response.hadir / data.response.total) * 100 || 0;
+
+  return (
+    <div className="space-y-8">
+      {/* HEADLINE */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <InfoCard title="Total Agenda" value={data.agenda.total} />
+        <InfoCard
+          title="Agenda Responded"
+          value={data.agenda.responded}
+          color="text-green-600"
+        />
+        <InfoCard
+          title="Agenda Pending"
+          value={data.agenda.pending}
+          color="text-yellow-600"
+        />
+      </div>
+
+      {/* AGENDA INFOGRAFIS */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Progress Agenda</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProgressBar
+            label="Agenda Terjawab"
+            value={agendaProgress}
+            color="bg-green-600"
+          />
+        </CardContent>
+      </Card>
+
+      {/* RESPONSE INFOGRAFIS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Partisipasi Kehadiran</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ProgressBar
+              label="Hadir"
+              value={hadirProgress}
+              color="bg-green-600"
+            />
+            <StatRow label="Tidak Hadir" value={data.response.tidakHadir} />
+            <StatRow label="Diwakilkan" value={data.response.diwakilkan} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Respons</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-5xl font-bold text-blue-600">
+              {data.response.total}
+            </div>
+            <p className="text-muted-foreground mt-2">
+              Total respon terhadap agenda
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ===== COMPONENT ===== */
+
+function InfoCard({
+  title,
+  value,
+  color = "text-primary",
+}: {
+  title: string;
+  value: number;
+  color?: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <p className="text-muted-foreground">{title}</p>
+        <h2 className={`text-4xl font-bold ${color}`}>{value}</h2>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProgressBar({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between text-sm">
+        <span>{label}</span>
+        <span>{value.toFixed(0)}%</span>
+      </div>
+      <div className="w-full bg-muted rounded-full h-3">
+        <div
+          className={`${color} h-3 rounded-full transition-all`}
+          style={{ width: `${value}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatRow({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex justify-between border-b py-2">
+      <span>{label}</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
+}

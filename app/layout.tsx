@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sistem Reminder Rutan",
-  description: "Sistem manajemen agenda untuk Kepala Rutan dan Kepala Seksi",
+  title: "SISDAPIM RUSARANG",
+  description: "Sistem Agenda Pimpinan",
 };
 
 export default function RootLayout({

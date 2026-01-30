@@ -61,9 +61,9 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "kepala_seksi") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    // if (!session || session.user.role !== "kepala_seksi") {
+    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // }
 
     const { id } = await params;
 
@@ -76,9 +76,9 @@ export async function PUT(
       return NextResponse.json({ error: "Agenda not found" }, { status: 404 });
     }
 
-    if (agenda.createdById !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    // if (agenda.createdById !== session?.user.id) {
+    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // }
 
     if (agenda.response) {
       return NextResponse.json(
@@ -116,9 +116,9 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "kepala_seksi") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    // if (!session || session.user.role !== "kepala_seksi") {
+    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // }
 
     const { id } = await params;
 
@@ -131,9 +131,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Agenda not found" }, { status: 404 });
     }
 
-    if (agenda.createdById !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    // if (agenda.createdById !== session?.user.id) {
+    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // }
 
     if (agenda.response) {
       return NextResponse.json(

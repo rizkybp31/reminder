@@ -4,13 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "../components/dashboard-layout";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -21,15 +15,26 @@ import {
   MapPin,
   User,
   Edit,
-  Trash2,
   Eye,
   Plus,
   UserCheck,
   LayoutDashboard,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Agenda {
   id: string;
@@ -67,6 +72,8 @@ export default function DashboardPage() {
     responded: 0,
     delegated: 0,
   });
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isKepalaRutan = session?.user?.role === "kepala_rutan";
   const isKepalaSeksi = session?.user?.role === "kepala_seksi";
@@ -125,7 +132,8 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Hapus agenda ini?")) return;
+    setDeletingId(id);
+
     try {
       const res = await fetch(`/api/agendas/${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -156,9 +164,9 @@ export default function DashboardPage() {
                 {agenda.title}
               </h3>
               <Badge
-                variant={agenda.status === "PENDING" ? "secondary" : "default"}
+                variant={agenda.status === "pending" ? "secondary" : "default"}
               >
-                {agenda.status === "PENDING" ? "Menunggu" : "Selesai"}
+                {agenda.status === "pending" ? "Menunggu" : "Selesai"}
               </Badge>
               {isDelegated && (
                 <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
@@ -216,22 +224,15 @@ export default function DashboardPage() {
           <div className="flex md:flex-col gap-2 justify-end">
             {isDelegated ? (
               // Agenda yang didelegasikan: hanya tombol detail
-              <Button
-                size="sm"
-                onClick={() => router.push(`/dashboard/agendas/${agenda.id}`)}
-              >
-                <Eye className="w-4 h-4 mr-2" /> Detail
-              </Button>
-            ) : isKepalaRutan ? (
-              // Kepala Rutan: hanya tombol detail
-              <Button
-                size="sm"
-                onClick={() => router.push(`/dashboard/agendas/${agenda.id}`)}
-              >
-                <Eye className="w-4 h-4 mr-2" /> Detail
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => router.push(`/dashboard/agendas/${agenda.id}`)}
+                >
+                  <Eye className="w-4 h-4 mr-2" /> Detail
+                </Button>
+              </>
             ) : (
-              // User lain: tombol edit dan delete untuk agenda miliknya
               <>
                 <Button
                   size="sm"
@@ -242,13 +243,49 @@ export default function DashboardPage() {
                 >
                   <Edit className="w-4 h-4" />
                 </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleDelete(agenda.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    {session?.user?.email !== agenda?.createdBy.email && (
+                      <Button size="sm" variant="destructive">
+                        {deletingId === agenda.id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Menghapus...
+                          </>
+                        ) : (
+                          "Hapus"
+                        )}
+                      </Button>
+                    )}
+                  </AlertDialogTrigger>
+
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Apakah Anda yakin ingin menghapus agenda{" "}
+                        <strong>{agenda.title}</strong>? Tindakan ini tidak
+                        dapat dibatalkan.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDelete(agenda.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Hapus
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                {/* <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleDelete(agenda.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button> */}
               </>
             )}
           </div>

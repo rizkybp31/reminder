@@ -69,7 +69,7 @@ export default function LoginClient() {
             </div>
             <div className="text-center space-y-2">
               <CardTitle className="text-2xl font-bold">
-                Sistem Reminder Rutan
+                SISDAPIM RUSARANG
               </CardTitle>
               <CardDescription>Silakan login untuk melanjutkan</CardDescription>
             </div>

@@ -153,14 +153,17 @@ const NavigationBar = () => {
             )}
 
             <div className="ml-auto flex items-center gap-2">
-              <Button
-                onClick={() => router.push("/dashboard/users/create")}
-                size="sm"
-                className="h-9"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Tambah User
-              </Button>
+              {session?.user?.role === "kepala_rutan" && (
+                <Button
+                  onClick={() => router.push("/dashboard/users/create")}
+                  size="sm"
+                  className="h-9"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah User
+                </Button>
+              )}
+
               <Button onClick={() => router.push("/dashboard/agendas/create")}>
                 <Plus className="mr-2 h-4 w-4" />
                 Tambah Agenda
