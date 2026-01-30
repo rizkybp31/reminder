@@ -16,6 +16,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle } from "lucide-react";
 
 import logo from "@/public/logo.png";
+import kemenimipas from "@/public/kemenimipas.png";
+import ditjenpas from "@/public/ditjenpas.png";
 import rutan from "@/public/rutan.jpeg";
 import Image from "next/image";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -63,7 +65,9 @@ export default function LoginClient() {
           <CardHeader className="space-y-4">
             {/* logo */}
             <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center border">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center gap-4">
+                <Image src={kemenimipas} alt="logo rutan" />
+                <Image src={ditjenpas} alt="logo rutan" />
                 <Image src={logo} alt="logo rutan" />
               </div>
             </div>

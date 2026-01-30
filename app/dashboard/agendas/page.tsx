@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { toast } from "sonner";
-import { format, weeksToDays } from "date-fns";
+import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
 interface Agenda {
@@ -74,9 +74,9 @@ export default function AgendaCalendarPage() {
               height="auto"
               events={events}
               headerToolbar={{
-                left: "prev,next today",
+                left: "prev,next",
                 center: "title",
-                right: "dayGridMonth,timeGridWeek,timeGridDay",
+                right: "dayGridMonth,timeGridWeek",
               }}
               buttonText={{
                 today: "Today",

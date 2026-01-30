@@ -148,13 +148,15 @@ export default function AgendaDetailPage() {
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
       <DashboardLayout>
-        <div className="flex justify-center py-20">Loading...</div>
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+          <p className="text-slate-500 animate-pulse">Memuat data agenda...</p>
+        </div>
       </DashboardLayout>
     );
-  }
 
   if (!agenda) {
     return (

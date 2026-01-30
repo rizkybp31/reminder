@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardLayout } from "@/app/components/dashboard-layout";
 
 type Statistik = {
   agenda: {
@@ -27,7 +28,17 @@ export default function StatistikPage() {
       .catch(console.error);
   }, []);
 
-  if (!data) return <div>Memuat statistik...</div>;
+  if (!data)
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+          <p className="text-slate-500 animate-pulse">
+            Memuat data statistik...
+          </p>
+        </div>
+      </DashboardLayout>
+    );
 
   const agendaProgress = (data.agenda.responded / data.agenda.total) * 100 || 0;
 
