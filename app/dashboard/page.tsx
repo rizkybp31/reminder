@@ -227,7 +227,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="flex md:flex-col gap-2 justify-end">
+            <div className="flex flex-col md:flex-row gap-2 justify-end">
               {/* Tombol Beri Respons: Hanya untuk Kepala Rutan, Agenda belum direspons, dan Status Pending */}
               {isKepalaRutan &&
                 !agenda.response &&
