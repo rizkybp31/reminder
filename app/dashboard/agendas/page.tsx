@@ -74,12 +74,18 @@ export default function AgendaCalendarPage() {
               height="auto"
               events={events}
               headerToolbar={{
-                left: "prev,next",
+                left: "",
                 center: "title",
+                right: "",
+              }}
+              footerToolbar={{
+                left: "prev,next today",
+                center: "",
                 right: "dayGridMonth,timeGridWeek",
               }}
               buttonText={{
                 today: "Today",
+                week: "Week",
                 month: "Month",
               }}
               eventClick={(info) => {

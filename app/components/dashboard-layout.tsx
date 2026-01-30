@@ -3,27 +3,7 @@
 
 import { signOut, useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
-import {
-  Calendar,
-  LayoutDashboard,
-  LogOut,
-  FileText,
-  BarChart3,
-  User,
-  Plus,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Calendar, LayoutDashboard, BarChart3 } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

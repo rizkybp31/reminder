@@ -8,6 +8,7 @@ import {
   BarChart3,
   Users,
   Plus,
+  Menu, // Icon Burger
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,11 +26,72 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { useState } from "react";
+
+interface NavItemsProps {
+  isMobile?: boolean;
+  navigation: Array<{
+    name: string;
+    href: string;
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    show: boolean;
+  }>;
+  pathname: string;
+  router: ReturnType<typeof useRouter>;
+  setOpen: (open: boolean) => void;
+}
+
+const NavItems = ({
+  isMobile = false,
+  navigation,
+  pathname,
+  router,
+  setOpen,
+}: NavItemsProps) => (
+  <>
+    {navigation.map(
+      (item) =>
+        item.show && (
+          <Button
+            key={item.name}
+            variant="ghost"
+            onClick={() => {
+              router.push(item.href);
+              if (isMobile) setOpen(false); // Tutup drawer jika di mobile
+            }}
+            className={cn(
+              "relative font-medium transition-colors hover:text-primary",
+              isMobile
+                ? "w-full justify-start h-12 px-4"
+                : "h-14 rounded-none px-4",
+              pathname === item.href
+                ? isMobile
+                  ? "bg-primary/10 text-primary border-l-4 border-primary"
+                  : "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary"
+                : "text-muted-foreground",
+            )}
+          >
+            <item.icon className="mr-2 h-4 w-4" />
+            {item.name}
+          </Button>
+        ),
+    )}
+  </>
+);
 
 const NavigationBar = () => {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [open, setOpen] = useState(false); // State untuk mengontrol mobile menu
+
   const isKepalaRutan = session?.user?.role === "kepala_rutan";
 
   const handleLogout = async () => {
@@ -38,12 +100,14 @@ const NavigationBar = () => {
   };
 
   const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+    return (
+      name
+        ?.split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "U"
+    );
   };
 
   const navigation = [
@@ -53,12 +117,7 @@ const NavigationBar = () => {
       icon: LayoutDashboard,
       show: true,
     },
-    {
-      name: "Agenda",
-      href: "/dashboard/agendas",
-      icon: Calendar,
-      show: true,
-    },
+    { name: "Agenda", href: "/dashboard/agendas", icon: Calendar, show: true },
     {
       name: "Statistik",
       href: "/dashboard/statistics",
@@ -75,49 +134,104 @@ const NavigationBar = () => {
 
   return (
     <div className="bg-background">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
-          {/* --- PERBAIKAN LOGO & TITLE --- */}
           <div className="flex items-center gap-4">
+            {/* --- BURGER MENU (Mobile Only) --- */}
+            <div className="block lg:hidden">
+              <Sheet open={open} onOpenChange={setOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-70 sm:w-87.5 px-4">
+                  <SheetHeader className="mb-6">
+                    <div className="flex items-center gap-1.5">
+                      <div className="relative h-8 w-8">
+                        <Image
+                          src={kemenimipas}
+                          alt="Logo"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="relative h-8 w-8">
+                        <Image
+                          src={ditjenpas}
+                          alt="Logo"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="relative h-8 w-8">
+                        <Image
+                          src={logo}
+                          alt="Logo"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
+                    <SheetTitle className="text-left flex items-center gap-2 mt-2">
+                      SISDAPIM RUSARANG
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col space-y-2">
+                    <NavItems
+                      isMobile
+                      navigation={navigation}
+                      pathname={pathname}
+                      router={router}
+                      setOpen={setOpen}
+                    />
+                    <Separator className="my-4" />
+                    <Button
+                      onClick={() => {
+                        router.push("/dashboard/agendas/create");
+                        setOpen(false);
+                      }}
+                      className="w-full justify-start"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Tambah Agenda
+                    </Button>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Logo Group */}
             <div className="flex items-center gap-1.5">
-              <div className="relative h-9 w-9">
+              <div className="relative h-8 w-8">
                 <Image
                   src={kemenimipas}
-                  alt="Logo Kemenimipas"
+                  alt="Logo"
                   fill
                   className="object-contain"
                 />
               </div>
-              <div className="relative h-9 w-9">
+              <div className="relative h-8 w-8">
                 <Image
                   src={ditjenpas}
-                  alt="Logo Ditjenpas"
+                  alt="Logo"
                   fill
                   className="object-contain"
                 />
               </div>
-              <div className="relative h-9 w-9">
-                <Image
-                  src={logo}
-                  alt="Logo Rutan"
-                  fill
-                  className="object-contain"
-                />
+              <div className="relative h-8 w-8">
+                <Image src={logo} alt="Logo" fill className="object-contain" />
               </div>
             </div>
 
-            <div className="md:block border-l pl-4 h-10 flex flex-col justify-center">
-              <h1 className="text-sm font-bold text-slate-900 uppercase tracking-tight">
-                Sistem Reminder Rutan
+            <div className="hidden sm:block border-l pl-4 h-8 flex flex-col justify-center">
+              <h1 className="text-sm font-bold leading-tight uppercase">
+                Sistem Reminder
               </h1>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                {isKepalaRutan
-                  ? "Dashboard Kepala Rutan"
-                  : "Dashboard Kepala Seksi"}
+              <p className="text-[10px] text-muted-foreground uppercase">
+                {isKepalaRutan ? "Kepala Rutan" : "Kepala Seksi"}
               </p>
             </div>
           </div>
-          {/* --- END PERBAIKAN LOGO --- */}
 
           {/* User Menu */}
           <DropdownMenu>
@@ -128,85 +242,50 @@ const NavigationBar = () => {
               >
                 <Avatar className="h-10 w-10 border border-muted">
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    {session?.user?.name && getInitials(session.user.name)}
+                    {getInitials(session?.user?.name || "")}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
+            <DropdownMenuContent className="w-56" align="end">
+              <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {session?.user?.name}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground">
+                  <p className="text-sm font-medium">{session?.user?.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     {session?.user?.email}
                   </p>
-                  {session?.user?.seksiName && (
-                    <p className="text-[10px] leading-none text-primary mt-1 font-semibold">
-                      {session.user.seksiName}
-                    </p>
-                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="text-red-600 focus:bg-red-50 focus:text-red-600 cursor-pointer"
+                className="text-red-600 cursor-pointer"
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                <LogOut className="mr-2 h-4 w-4" /> Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
 
-      <div className="border-b bg-slate-50/50">
+      {/* --- DESKTOP NAVIGATION (Hidden on Mobile) --- */}
+      <div className="hidden lg:block border-b bg-slate-50/50">
         <div className="container">
-          <nav className="flex items-center h-14 overflow-x-auto no-scrollbar">
-            <div className="flex space-x-1">
-              {navigation.map(
-                (item) =>
-                  item.show && (
-                    <Button
-                      key={item.name}
-                      variant="ghost"
-                      onClick={() => router.push(item.href)}
-                      className={cn(
-                        "relative h-14 rounded-none px-4 font-medium transition-colors hover:text-primary",
-                        pathname === item.href
-                          ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary bg-white/50"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {item.name}
-                    </Button>
-                  ),
-              )}
+          <nav className="flex items-center h-14">
+            <div className="flex">
+              <NavItems
+                navigation={navigation}
+                pathname={pathname}
+                router={router}
+                setOpen={setOpen}
+              />
             </div>
-
             <div className="ml-auto flex items-center gap-2">
-              {isKepalaRutan && (
-                <Button
-                  onClick={() => router.push("/dashboard/users/create")}
-                  size="sm"
-                  variant="outline"
-                  className="hidden sm:flex h-9"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  User
-                </Button>
-              )}
-
               <Button
-                onClick={() => router.push("/dashboard/agendas/create")}
                 size="sm"
-                className="h-9 shadow-sm"
+                onClick={() => router.push("/dashboard/agendas/create")}
               >
-                <Plus className="mr-2 h-4 w-4" />
-                Agenda
+                <Plus className="mr-2 h-4 w-4" /> Tambah Agenda
               </Button>
             </div>
           </nav>
@@ -215,5 +294,10 @@ const NavigationBar = () => {
     </div>
   );
 };
+
+// Component Separator simple jika belum install shadcn separator
+const Separator = ({ className }: { className?: string }) => (
+  <div className={cn("h-1px w-full bg-border", className)} />
+);
 
 export default NavigationBar;
