@@ -21,6 +21,7 @@ import ditjenpas from "@/public/ditjenpas.png";
 import rutan from "@/public/rutan.jpeg";
 import Image from "next/image";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import getFriendlyErrorMessage from "@/utils/getFriendlyErrorMessage";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -86,7 +87,9 @@ export default function LoginClient() {
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription>
+                    {getFriendlyErrorMessage(error)}
+                  </AlertDescription>
                 </Alert>
               )}
 

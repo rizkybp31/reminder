@@ -34,6 +34,7 @@ export default function AgendaCalendarPage() {
   const router = useRouter();
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchAgendas = async () => {
     try {
@@ -42,6 +43,8 @@ export default function AgendaCalendarPage() {
       setAgendas(data.agendas);
     } catch {
       toast.error("Gagal memuat agenda");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,35 +67,49 @@ export default function AgendaCalendarPage() {
       <main className="container py-6S">
         <Card>
           <CardHeader>
-            <CardTitle>Kalender Agenda</CardTitle>
+            <CardTitle className="text-2xl font-bold text-slate-900">
+              Kalender Agenda
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <FullCalendar
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView="dayGridMonth"
-              locale="id"
-              height="auto"
-              events={events}
-              headerToolbar={{
-                left: "",
-                center: "title",
-                right: "",
-              }}
-              footerToolbar={{
-                left: "prev,next today",
-                center: "",
-                right: "dayGridMonth,timeGridWeek",
-              }}
-              buttonText={{
-                today: "Today",
-                week: "Week",
-                month: "Month",
-              }}
-              eventClick={(info) => {
-                setSelectedAgenda(info.event.extendedProps as Agenda);
-              }}
-            />
-          </CardContent>
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+              <p className="text-slate-500 animate-pulse">
+                Memuat data kalander...
+              </p>
+            </div>
+          ) : (
+            <>
+              <CardContent>
+                <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  locale="id"
+                  height="auto"
+                  events={events}
+                  headerToolbar={{
+                    left: "",
+                    center: "title",
+                    right: "",
+                  }}
+                  footerToolbar={{
+                    left: "prev,next today",
+                    center: "",
+                    right: "dayGridMonth,timeGridWeek",
+                  }}
+                  buttonText={{
+                    today: "Today",
+                    week: "Week",
+                    month: "Month",
+                  }}
+                  eventClick={(info) => {
+                    setSelectedAgenda(info.event.extendedProps as Agenda);
+                  }}
+                />
+              </CardContent>
+            </>
+          )}
         </Card>
 
         {/* Dialog Detail Agenda */}

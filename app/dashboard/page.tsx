@@ -45,7 +45,7 @@ interface Agenda {
   endDateTime: string;
   status: string;
   createdBy: {
-    id: string; // Tambahkan ID untuk pengecekan kepemilikan
+    id: string;
     name: string;
     email: string;
     seksiName: string;
@@ -148,7 +148,6 @@ export default function DashboardPage() {
     agenda: Agenda;
     isDelegated?: boolean;
   }) => {
-    // Cek apakah user saat ini adalah pemilik/pembuat agenda
     const isOwner =
       session?.user?.email === agenda.createdBy?.email ||
       session?.user?.id === agenda.createdBy?.id;
@@ -201,7 +200,10 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   <span>
-                    {agenda.createdBy?.name} ({agenda.createdBy?.seksiName})
+                    {agenda.createdBy?.name}{" "}
+                    {agenda.createdBy?.seksiName
+                      ? `(${agenda.createdBy?.seksiName})`
+                      : ""}
                   </span>
                 </div>
               </div>
@@ -228,7 +230,6 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-2 justify-end">
-              {/* Tombol Beri Respons: Hanya untuk Kepala Rutan, Agenda belum direspons, dan Status Pending */}
               {isKepalaRutan &&
                 !agenda.response &&
                 agenda.status === "pending" && (
@@ -243,7 +244,6 @@ export default function DashboardPage() {
                   </Button>
                 )}
 
-              {/* Tombol Detail: Semua orang bisa lihat detail */}
               <Button
                 size="sm"
                 variant="outline"
@@ -252,7 +252,6 @@ export default function DashboardPage() {
                 <Eye className="w-4 h-4 mr-2" /> Detail
               </Button>
 
-              {/* Tombol Edit & Hapus: Hanya muncul jika user adalah PEMBUAT (Owner) agenda tersebut */}
               {isOwner && (
                 <>
                   <Button
@@ -304,16 +303,6 @@ export default function DashboardPage() {
     );
   };
 
-  if (loading)
-    return (
-      <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
-          <p className="text-slate-500 animate-pulse">Memuat data agenda...</p>
-        </div>
-      </DashboardLayout>
-    );
-
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-8">
@@ -326,85 +315,95 @@ export default function DashboardPage() {
               Selamat datang kembali, {session?.user?.name}
             </p>
           </div>
-          {!isKepalaRutan && (
-            <Button
-              onClick={() => router.push("/dashboard/agendas/create")}
-              className="shadow-lg shadow-primary/20"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Buat Agenda Baru
-            </Button>
-          )}
+
+          <Button
+            onClick={() => router.push("/dashboard/agendas/create")}
+            className="shadow-lg shadow-primary/20"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Buat Agenda Baru
+          </Button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Agenda"
-            value={stats.total}
-            icon={<LayoutDashboard />}
-            desc="Semua agenda unik"
-          />
-          <StatCard
-            title="Pending"
-            value={stats.pending}
-            icon={<Clock />}
-            desc="Butuh respons"
-            color="text-orange-600"
-          />
-          <StatCard
-            title="Selesai"
-            value={stats.responded}
-            icon={<CheckCircle />}
-            desc="Sudah direspons"
-            color="text-green-600"
-          />
-          {(isKepalaSeksi || isKepalaRutan) && (
-            <StatCard
-              title="Delegasi"
-              value={stats.delegated}
-              icon={<UserCheck />}
-              desc="Tugas untuk Anda"
-              color="text-blue-600"
-            />
-          )}
-        </div>
-
-        <Separator />
-
-        <div className="space-y-10">
-          <section className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-1 bg-primary rounded-full" />
-              <h2 className="text-xl font-semibold">Semua Agenda</h2>
-            </div>
-            <div className="grid gap-4">
-              {agendas.length > 0 ? (
-                agendas.map((a) => <AgendaCard key={a.id} agenda={a} />)
-              ) : (
-                <EmptyState message="Belum ada agenda yang dibuat." />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+            <p className="text-slate-500 animate-pulse">
+              Memuat data dashboard...
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="Total Agenda"
+                value={stats.total}
+                icon={<LayoutDashboard />}
+                desc="Semua agenda unik"
+              />
+              <StatCard
+                title="Pending"
+                value={stats.pending}
+                icon={<Clock />}
+                desc="Butuh respons"
+                color="text-orange-600"
+              />
+              <StatCard
+                title="Selesai"
+                value={stats.responded}
+                icon={<CheckCircle />}
+                desc="Sudah direspons"
+                color="text-green-600"
+              />
+              {(isKepalaSeksi || isKepalaRutan) && (
+                <StatCard
+                  title="Delegasi"
+                  value={stats.delegated}
+                  icon={<UserCheck />}
+                  desc="Tugas untuk Anda"
+                  color="text-blue-600"
+                />
               )}
             </div>
-          </section>
 
-          {delegatedAgendas.length > 0 && (
-            <section className="space-y-4 pt-4">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-1 bg-blue-500 rounded-full" />
-                <h2 className="text-xl font-semibold text-blue-900">
-                  Agenda Diwakilkan Ke Saya
-                </h2>
-              </div>
-              <div className="grid gap-4">
-                {delegatedAgendas.map((a) => (
-                  <AgendaCard
-                    key={`delegated-${a.id}`}
-                    agenda={a}
-                    isDelegated
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
+            <Separator />
+
+            <div className="space-y-10">
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-1 bg-primary rounded-full" />
+                  <h2 className="text-xl font-semibold">Semua Agenda</h2>
+                </div>
+                <div className="grid gap-4">
+                  {agendas.length > 0 ? (
+                    agendas.map((a) => <AgendaCard key={a.id} agenda={a} />)
+                  ) : (
+                    <EmptyState message="Belum ada agenda yang dibuat." />
+                  )}
+                </div>
+              </section>
+
+              {delegatedAgendas.length > 0 && (
+                <section className="space-y-4 pt-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-1 bg-blue-500 rounded-full" />
+                    <h2 className="text-xl font-semibold text-blue-900">
+                      Agenda Diwakilkan Ke Saya
+                    </h2>
+                  </div>
+                  <div className="grid gap-4">
+                    {delegatedAgendas.map((a) => (
+                      <AgendaCard
+                        key={`delegated-${a.id}`}
+                        agenda={a}
+                        isDelegated
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );
