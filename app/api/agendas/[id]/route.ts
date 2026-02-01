@@ -58,7 +58,8 @@ export async function GET(
 // PUT - Update agenda (Kepala Seksi only, and only if not responded)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  // Perhatikan perubahan tipe di sini: params adalah Promise
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session)
@@ -66,7 +67,7 @@ export async function PUT(
 
   try {
     const formData = await req.formData();
-    const agendaId = params.id;
+    const { id: agendaId } = await params;
 
     // Ambil data dari formData
     const title = formData.get("title") as string;
