@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma, StatusAgenda } from "@/generated/prisma/client";
+import { supabase } from "@/lib/supabase-server";
 
-// HANDLER UNTUK GET (Fetch Agendas)
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Mengambil query parameters
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
 
@@ -85,47 +84,82 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// HANDLER UNTUK POST (Create Agenda)
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const formData = await req.formData();
 
-    const body = await req.json(); // Di App Router, gunakan req.json()
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const location = formData.get("location") as string;
+    const startDateTime = formData.get("startDateTime") as string;
+    const endDateTime = formData.get("endDateTime") as string;
+    const file = formData.get("attachment") as File | null;
 
-    // Validasi sederhana
-    if (!body.title || !body.startDateTime || !body.endDateTime) {
+    if (!title || !startDateTime || !endDateTime) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
     }
 
+    let attachmentUrl: string | null = null;
+
+    if (file && file.size > 0) {
+      if (file.type !== "application/pdf") {
+        return NextResponse.json({ error: "File harus PDF" }, { status: 400 });
+      }
+
+      // ✅ Use Buffer, not Uint8Array
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const fileExt = "pdf";
+      const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `agendas/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("lampiran")
+        .upload(filePath, buffer, {
+          contentType: "application/pdf",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("SUPABASE UPLOAD ERROR:", uploadError);
+        return NextResponse.json(
+          { error: `Upload gagal: ${uploadError.message}` },
+          { status: 500 },
+        );
+      }
+
+      // ✅ Get public URL
+      const { data } = supabase.storage.from("lampiran").getPublicUrl(filePath);
+
+      attachmentUrl = data.publicUrl;
+    }
+
     const agenda = await prisma.agenda.create({
       data: {
-        title: body.title,
-        description: body.description,
-        location: body.location,
-        startDateTime: new Date(body.startDateTime),
-        endDateTime: new Date(body.endDateTime),
+        title,
+        description,
+        location,
+        startDateTime: new Date(startDateTime),
+        endDateTime: new Date(endDateTime),
         createdById: session.user.id,
+        attachmentUrl,
       },
     });
 
-    return NextResponse.json(
-      {
-        ...agenda,
-        startDateTime: agenda.startDateTime.toISOString(),
-        endDateTime: agenda.endDateTime.toISOString(),
-      },
-      { status: 201 },
-    );
+    return NextResponse.json(agenda, { status: 201 });
   } catch (error) {
-    console.error("Error creating agenda:", error);
+    console.error("CREATE AGENDA ERROR:", error);
     return NextResponse.json(
-      { error: "Failed to create agenda" },
+      { error: "Internal Server Error" },
       { status: 500 },
     );
   }

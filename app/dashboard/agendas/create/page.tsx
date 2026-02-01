@@ -15,6 +15,7 @@ const CreateAgenda = () => {
   const { data: session, status } = useSession();
 
   const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -31,19 +32,26 @@ const CreateAgenda = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setLoading(true);
+
     try {
+      const formData = new FormData();
+      formData.append("title", form.title);
+      formData.append("description", form.description);
+      formData.append("location", form.location);
+      formData.append(
+        "startDateTime",
+        new Date(form.startDateTime).toISOString(),
+      );
+      formData.append("endDateTime", new Date(form.endDateTime).toISOString());
+
+      if (file) {
+        formData.append("attachment", file);
+      }
+
       const res = await fetch("/api/agendas", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.title,
-          description: form.description,
-          location: form.location,
-          startDateTime: new Date(form.startDateTime).toISOString(),
-          endDateTime: new Date(form.endDateTime).toISOString(),
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -54,7 +62,7 @@ const CreateAgenda = () => {
       toast.success("Agenda berhasil dibuat");
       router.push("/dashboard");
       router.refresh();
-    } catch (err: unknown) {
+    } catch (err) {
       toast.error((err as Error).message);
     } finally {
       setLoading(false);
@@ -121,6 +129,19 @@ const CreateAgenda = () => {
                 required
                 value={form.endDateTime}
                 onChange={handleChange}
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel>Lampiran Surat (PDF)</FieldLabel>
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    setFile(e.target.files[0]);
+                  }
+                }}
               />
             </Field>
 

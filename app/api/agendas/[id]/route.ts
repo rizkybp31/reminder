@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase-server";
 
 // GET single agenda
 export async function GET(
@@ -57,53 +58,86 @@ export async function GET(
 // PUT - Update agenda (Kepala Seksi only, and only if not responded)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
+  const session = await getServerSession(authOptions);
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
-    const session = await getServerSession(authOptions);
-    // if (!session || session.user.role !== "kepala_seksi") {
-    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // }
+    const formData = await req.formData();
+    const agendaId = params.id;
 
-    const { id } = await params;
+    // Ambil data dari formData
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const location = formData.get("location") as string;
+    const startDateTime = formData.get("startDateTime") as string;
+    const endDateTime = formData.get("endDateTime") as string;
+    const file = formData.get("attachment") as File | null;
+    let attachmentUrl = formData.get("attachmentUrl") as string | null;
 
-    const agenda = await prisma.agenda.findUnique({
-      where: { id },
-      include: { response: true },
+    // 1. Cek apakah agenda ada
+    const existingAgenda = await prisma.agenda.findUnique({
+      where: { id: agendaId },
     });
 
-    if (!agenda) {
-      return NextResponse.json({ error: "Agenda not found" }, { status: 404 });
-    }
-
-    // if (agenda.createdById !== session?.user.id) {
-    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // }
-
-    if (agenda.response) {
+    if (!existingAgenda) {
       return NextResponse.json(
-        { error: "Tidak dapat mengedit agenda yang sudah direspons" },
-        { status: 400 },
+        { error: "Agenda tidak ditemukan" },
+        { status: 404 },
       );
     }
 
-    const body = await req.json();
+    // 2. Logika Update File jika ada file baru
+    if (file && file.size > 0) {
+      // Hapus file lama dari storage (opsional)
+      if (existingAgenda.attachmentUrl) {
+        const oldPath = existingAgenda.attachmentUrl.split("/").pop();
+        if (oldPath) {
+          await supabase.storage
+            .from("lampiran")
+            .remove([`agendas/${oldPath}`]);
+        }
+      }
+
+      // Upload file baru
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
+      const fileName = `${session.user.id}-${Date.now()}.pdf`;
+      const filePath = `agendas/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("lampiran")
+        .upload(filePath, buffer, {
+          contentType: "application/pdf",
+          upsert: true,
+        });
+
+      if (uploadError) throw new Error(uploadError.message);
+
+      const { data } = supabase.storage.from("lampiran").getPublicUrl(filePath);
+      attachmentUrl = data.publicUrl;
+    }
+
+    // 3. Update Database
     const updatedAgenda = await prisma.agenda.update({
-      where: { id },
+      where: { id: agendaId },
       data: {
-        title: body.title,
-        description: body.description,
-        location: body.location,
-        startDateTime: new Date(body.startDateTime),
-        endDateTime: new Date(body.endDateTime),
+        title,
+        description,
+        location,
+        startDateTime: new Date(startDateTime),
+        endDateTime: new Date(endDateTime),
+        attachmentUrl,
       },
     });
 
     return NextResponse.json(updatedAgenda);
-  } catch (error) {
-    console.error("Error updating agenda:", error);
+  } catch (error: unknown) {
+    console.error("UPDATE ERROR:", error);
     return NextResponse.json(
-      { error: "Failed to update agenda" },
+      { error: (error as Error).message || "Gagal update" },
       { status: 500 },
     );
   }

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 const EditAgendaPage = () => {
   const router = useRouter();
@@ -19,6 +20,7 @@ const EditAgendaPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [file, setFile] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -26,6 +28,7 @@ const EditAgendaPage = () => {
     location: "",
     startDateTime: "",
     endDateTime: "",
+    attachmentUrl: "",
   });
 
   useEffect(() => {
@@ -42,6 +45,7 @@ const EditAgendaPage = () => {
           location: data.location,
           startDateTime: data.startDateTime.slice(0, 16),
           endDateTime: data.endDateTime.slice(0, 16),
+          attachmentUrl: data.attachmentUrl || "",
         });
       } catch (err) {
         toast.error((err as Error).message);
@@ -63,16 +67,27 @@ const EditAgendaPage = () => {
     setLoading(true);
 
     try {
+      const formData = new FormData();
+      formData.append("title", form.title);
+      formData.append("description", form.description);
+      formData.append("location", form.location);
+      formData.append(
+        "startDateTime",
+        new Date(form.startDateTime).toISOString(),
+      );
+      formData.append("endDateTime", new Date(form.endDateTime).toISOString());
+
+      // Kirim attachmentUrl lama sebagai cadangan jika tidak ada file baru
+      formData.append("attachmentUrl", form.attachmentUrl);
+
+      // Jika ada file baru yang dipilih user
+      if (file) {
+        formData.append("attachment", file);
+      }
+
       const res = await fetch(`/api/agendas/${agendaId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.title,
-          description: form.description,
-          location: form.location,
-          startDateTime: new Date(form.startDateTime).toISOString(),
-          endDateTime: new Date(form.endDateTime).toISOString(),
-        }),
+        method: "PUT", // Gunakan PUT
+        body: formData, // Langsung kirim formData (tanpa headers Content-Type JSON)
       });
 
       if (!res.ok) {
@@ -152,6 +167,26 @@ const EditAgendaPage = () => {
                 required
                 value={form.endDateTime}
                 onChange={handleChange}
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel>Lampiran Surat (PDF)</FieldLabel>
+              <Link
+                href={form.attachmentUrl}
+                target="_blank"
+                className="text-sm text-blue-600 underline mb-2 block"
+              >
+                Lihat Lampiran
+              </Link>
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    setFile(e.target.files[0]);
+                  }
+                }}
               />
             </Field>
 
