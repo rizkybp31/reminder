@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, MapPin, User, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, User, Clock, File } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ interface Agenda {
   location: string;
   startDateTime: string;
   endDateTime: string;
+  attachmentUrl?: string;
   status: string;
   createdBy: {
     name: string;
@@ -205,6 +206,22 @@ export default function AgendaDetailPage() {
                   <div>
                     <User className="inline mr-2" />
                     {agenda.createdBy.name}
+                  </div>
+                  <div>
+                    <File className="inline mr-2" />
+                    {agenda.attachmentUrl ? (
+                      <a
+                        href={agenda.attachmentUrl}
+                        target="_blank"
+                        className="text-sm text-blue-600 underline"
+                      >
+                        Lihat Lampiran
+                      </a>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        Tidak ada lampiran
+                      </span>
+                    )}
                   </div>
                 </div>
               </CardContent>
