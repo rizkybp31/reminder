@@ -50,12 +50,12 @@ export default function StatistikPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <InfoCard title="Total Agenda" value={data.agenda.total} />
         <InfoCard
-          title="Agenda Responded"
+          title="Agenda yang Direspon"
           value={data.agenda.responded}
           color="text-green-600"
         />
         <InfoCard
-          title="Agenda Pending"
+          title="Agenda Menunggu Respon"
           value={data.agenda.pending}
           color="text-yellow-600"
         />

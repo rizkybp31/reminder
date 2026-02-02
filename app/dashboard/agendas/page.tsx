@@ -96,12 +96,11 @@ export default function AgendaCalendarPage() {
                   footerToolbar={{
                     left: "prev,next today",
                     center: "",
-                    right: "dayGridMonth,timeGridWeek",
+                    right: "dayGridMonth",
                   }}
                   buttonText={{
-                    today: "Today",
-                    week: "Week",
-                    month: "Month",
+                    today: "Hari ini",
+                    month: "Bulan",
                   }}
                   eventClick={(info) => {
                     setSelectedAgenda(info.event.extendedProps as Agenda);

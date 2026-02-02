@@ -90,7 +90,7 @@ export default function CreateUserPage() {
       toast.success("User berhasil ditambahkan");
       router.push("/dashboard/users");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Terjadi kesalahan");
     } finally {
       setLoading(false);
@@ -149,7 +149,7 @@ export default function CreateUserPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Nama Seksi</Label>
+              <Label>Nama</Label>
               <Input
                 placeholder="Contoh: Keamanan"
                 value={form.seksiName}

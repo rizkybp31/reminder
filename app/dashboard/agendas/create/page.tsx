@@ -72,46 +72,46 @@ const CreateAgenda = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create New Agenda</CardTitle>
+        <CardTitle>Buat Agenda Baru</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel>Agenda Title</FieldLabel>
+              <FieldLabel>Nama Agenda</FieldLabel>
               <Input
                 name="title"
                 required
                 value={form.title}
                 onChange={handleChange}
-                placeholder="Enter Agenda Title"
+                placeholder="Masukkan nama agenda"
               />
             </Field>
 
             <Field>
-              <FieldLabel>Description</FieldLabel>
+              <FieldLabel>Deskripsi</FieldLabel>
               <Input
                 name="description"
                 required
                 value={form.description}
                 onChange={handleChange}
-                placeholder="Enter Description"
+                placeholder="Masukkan deskripsi agenda"
               />
             </Field>
 
             <Field>
-              <FieldLabel>Location</FieldLabel>
+              <FieldLabel>Lokasi</FieldLabel>
               <Input
                 name="location"
                 required
                 value={form.location}
                 onChange={handleChange}
-                placeholder="Enter Location"
+                placeholder="Masukkan lokasi agenda"
               />
             </Field>
 
             <Field>
-              <FieldLabel>Agenda Start</FieldLabel>
+              <FieldLabel>Tanggal Mulai</FieldLabel>
               <Input
                 type="datetime-local"
                 name="startDateTime"
@@ -122,7 +122,7 @@ const CreateAgenda = () => {
             </Field>
 
             <Field>
-              <FieldLabel>Agenda End</FieldLabel>
+              <FieldLabel>Tanggal Selesai</FieldLabel>
               <Input
                 type="datetime-local"
                 name="endDateTime"
@@ -151,10 +151,10 @@ const CreateAgenda = () => {
                 variant="outline"
                 onClick={() => router.back()}
               >
-                Back
+                Kembali
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Saving..." : "Create Agenda"}
+                {loading ? "Meyimpan..." : "Buat Agenda"}
               </Button>
             </Field>
           </FieldGroup>

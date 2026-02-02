@@ -52,7 +52,7 @@ model Agenda {
   title         String
   description   String        @db.Text
   location      String
-  attachmentUrl String?      @map("attachment_url")
+  attachmentUrl String?       @map("attachment_url")
   startDateTime DateTime      @map("start_datetime")
   endDateTime   DateTime      @map("end_datetime")
   status        StatusAgenda  @default(pending)

@@ -83,7 +83,7 @@ export default function DashboardPage() {
     if (status === "authenticated") {
       fetchAgendas();
     }
-  }, [status]);
+  }, [status, agendas.length]);
 
   const fetchAgendas = async () => {
     try {

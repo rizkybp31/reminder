@@ -3,6 +3,67 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id: userId } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.user.role !== "kepala_rutan") {
+    return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    return NextResponse.json(
+      { error: "User tidak ditemukan" },
+      { status: 404 },
+    );
+  }
+
+  return NextResponse.json(user);
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id: userId } = await params;
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.user.role !== "kepala_rutan") {
+    return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
+  }
+
+  const body = await req.json();
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: body,
+    });
+
+    return NextResponse.json(updatedUser);
+  } catch {
+    return NextResponse.json(
+      { error: "Gagal memperbarui user" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -11,17 +72,14 @@ export async function DELETE(
     const { id: userId } = await params;
     const session = await getServerSession(authOptions);
 
-    // 1. Cek Autentikasi
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Cek Otorisasi (Hanya KEPALA_RUTAN)
     if (session.user.role !== "kepala_rutan") {
       return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
     }
 
-    // 3. Cegah hapus diri sendiri
     if (userId === session.user.id) {
       return NextResponse.json(
         { error: "Tidak bisa menghapus akun sendiri" },
@@ -29,7 +87,6 @@ export async function DELETE(
       );
     }
 
-    // 4. Cek keberadaan user
     const userToDelete = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -40,7 +97,6 @@ export async function DELETE(
       );
     }
 
-    // 5. Proteksi Admin terakhir
     if (userToDelete.role === "kepala_rutan") {
       const adminCount = await prisma.user.count({
         where: { role: "kepala_rutan" },
