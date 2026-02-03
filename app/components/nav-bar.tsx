@@ -92,7 +92,7 @@ const NavigationBar = () => {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false); // State untuk mengontrol mobile menu
+  const [open, setOpen] = useState(false);
 
   const isKepalaRutan = session?.user?.role === "kepala_rutan";
 
@@ -135,7 +135,7 @@ const NavigationBar = () => {
   ];
 
   return (
-    <div className="bg-background px-6">
+    <div className="bg-background px-4">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">

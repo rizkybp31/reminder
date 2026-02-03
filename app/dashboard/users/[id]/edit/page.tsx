@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Link } from "lucide-react";
+import Link from "next/link";
 
 interface Payload {
   name: string;
@@ -237,8 +237,8 @@ export default function EditUserPage() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-3">
-              <Link href="/dashboard/users" className="w-full">
-                <Button variant="outline" className="w-full">
+              <Link href="/dashboard/users">
+                <Button variant="outline" className="w-full border-4">
                   Batal
                 </Button>
               </Link>
