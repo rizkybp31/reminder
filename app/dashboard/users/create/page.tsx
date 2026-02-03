@@ -109,7 +109,6 @@ export default function CreateUserPage() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Nama */}
             <div className="space-y-2">
               <Label>Nama Lengkap</Label>
               <Input
@@ -119,7 +118,6 @@ export default function CreateUserPage() {
               />
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
               <Label>Email</Label>
               <Input
@@ -130,7 +128,6 @@ export default function CreateUserPage() {
               />
             </div>
 
-            {/* Role */}
             <div className="space-y-2">
               <Label>Role</Label>
               <Select
@@ -159,7 +156,6 @@ export default function CreateUserPage() {
               />
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
               <Label>Password</Label>
               <Input
@@ -170,7 +166,6 @@ export default function CreateUserPage() {
               />
             </div>
 
-            {/* Confirm Password */}
             <div className="space-y-2">
               <Label>Konfirmasi Password</Label>
               <Input

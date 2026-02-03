@@ -15,10 +15,10 @@ const DashboardLayout = async ({
   }
 
   return (
-    <div className="px-5">
+    <>
       <NavigationBar />
-      <div className="py-6">{children}</div>
-    </div>
+      <main className="container py-6 px-6">{children}</main>
+    </>
   );
 };
 

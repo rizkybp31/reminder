@@ -15,10 +15,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner"; // Ganti useToast dengan Sonner
-import { Loader2 } from "lucide-react"; // Untuk icon loading
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { toTitleCase } from "@/utils/toTitleCase";
-import { DashboardLayout } from "@/app/components/dashboard-layout";
 
 interface User {
   id: string;
@@ -67,10 +66,10 @@ export default function UsersPage() {
         const errorData = await res.json();
         toast.error(errorData.error || "Gagal menghapus user.");
       }
-    } catch (error) {
+    } catch {
       toast.error("Terjadi kesalahan saat menghapus user.");
     } finally {
-      setDeletingId(null); // Reset loading
+      setDeletingId(null);
     }
   };
 
@@ -81,7 +80,7 @@ export default function UsersPage() {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold">Manajemen User</h1>
+        <h1 className="text-3xl font-bold">Manajemen User</h1>
         <Button onClick={() => router.push("/dashboard/users/create")}>
           + Tambah User
         </Button>
@@ -95,14 +94,14 @@ export default function UsersPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <DashboardLayout>
+            <>
               <div className="flex flex-col items-center justify-center h-64 gap-4">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
                 <p className="text-slate-500 animate-pulse">
                   Memuat data users...
                 </p>
               </div>
-            </DashboardLayout>
+            </>
           ) : users.length === 0 ? (
             <p className="text-sm text-muted-foreground">Belum ada user</p>
           ) : (

@@ -34,6 +34,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useState } from "react";
+import Link from "next/link";
 
 interface NavItemsProps {
   isMobile?: boolean;
@@ -52,35 +53,30 @@ const NavItems = ({
   isMobile = false,
   navigation,
   pathname,
-  router,
-  setOpen,
 }: NavItemsProps) => (
   <>
     {navigation.map(
       (item) =>
         item.show && (
-          <Button
-            key={item.name}
-            variant="ghost"
-            onClick={() => {
-              router.push(item.href);
-              if (isMobile) setOpen(false); // Tutup drawer jika di mobile
-            }}
-            className={cn(
-              "relative font-medium transition-colors hover:text-primary",
-              isMobile
-                ? "w-full justify-start h-12 px-4"
-                : "h-14 rounded-none px-4",
-              pathname === item.href
-                ? isMobile
-                  ? "bg-primary/10 text-primary border-l-4 border-primary"
-                  : "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary"
-                : "text-muted-foreground",
-            )}
-          >
-            <item.icon className="mr-2 h-4 w-4" />
-            {item.name}
-          </Button>
+          <Link key={item.name} href={item.href} passHref>
+            <Button
+              variant={"ghost"}
+              className={cn(
+                "relative font-medium transition-colors hover:text-primary",
+                isMobile
+                  ? "w-full justify-start h-12 px-4"
+                  : "h-14 rounded-none px-4",
+                pathname === item.href
+                  ? isMobile
+                    ? "bg-primary/10 text-primary border-l-4 border-primary"
+                    : "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary"
+                  : "text-muted-foreground",
+              )}
+            >
+              <item.icon className="mr-2 h-4 w-4" />
+              {item.name}
+            </Button>
+          </Link>
         ),
     )}
   </>
@@ -133,11 +129,10 @@ const NavigationBar = () => {
   ];
 
   return (
-    <div className="bg-background">
+    <div className="bg-background px-6">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* --- BURGER MENU (Mobile Only) --- */}
             <div className="block lg:hidden">
               <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
@@ -200,7 +195,6 @@ const NavigationBar = () => {
               </Sheet>
             </div>
 
-            {/* Logo Group */}
             <div className="flex items-center gap-1.5">
               <div className="relative h-8 w-8">
                 <Image
@@ -233,7 +227,6 @@ const NavigationBar = () => {
             </div>
           </div>
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -268,7 +261,6 @@ const NavigationBar = () => {
         </div>
       </header>
 
-      {/* --- DESKTOP NAVIGATION (Hidden on Mobile) --- */}
       <div className="hidden lg:block border-b bg-slate-50/50">
         <div className="container">
           <nav className="flex items-center h-14">
@@ -280,14 +272,6 @@ const NavigationBar = () => {
                 setOpen={setOpen}
               />
             </div>
-            <div className="ml-auto flex items-center gap-2">
-              <Button
-                size="sm"
-                onClick={() => router.push("/dashboard/agendas/create")}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Tambah Agenda
-              </Button>
-            </div>
           </nav>
         </div>
       </div>
@@ -295,7 +279,6 @@ const NavigationBar = () => {
   );
 };
 
-// Component Separator simple jika belum install shadcn separator
 const Separator = ({ className }: { className?: string }) => (
   <div className={cn("h-1px w-full bg-border", className)} />
 );

@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: {
-        startDateTime: "asc",
+        startDateTime: "desc",
       },
     });
 

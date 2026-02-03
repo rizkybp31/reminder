@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { DashboardLayout } from "@/app/components/dashboard-layout";
 import {
   Card,
   CardContent,
@@ -24,6 +23,7 @@ import { toast } from "sonner";
 
 import { IoIosArrowDown } from "react-icons/io";
 import { toTitleCase } from "@/utils/toTitleCase";
+import Link from "next/link";
 
 interface Agenda {
   id: string;
@@ -151,28 +151,28 @@ export default function AgendaDetailPage() {
 
   if (loading)
     return (
-      <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
-          <p className="text-slate-500 animate-pulse">Memuat data agenda...</p>
-        </div>
-      </DashboardLayout>
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+        <p className="text-slate-500 animate-pulse">Memuat data agenda...</p>
+      </div>
     );
 
   if (!agenda) {
     return (
-      <DashboardLayout>
+      <>
         <p className="text-center py-20">Agenda tidak ditemukan</p>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="max-w-6xl mx-auto space-y-6">
-        <Button variant="ghost" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-        </Button>
+        <Link href="/dashboard">
+          <Button variant="ghost" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+          </Button>
+        </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
@@ -309,6 +309,6 @@ export default function AgendaDetailPage() {
           )}
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

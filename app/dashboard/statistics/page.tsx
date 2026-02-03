@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DashboardLayout } from "@/app/components/dashboard-layout";
 
 type Statistik = {
   agenda: {
@@ -30,14 +29,14 @@ export default function StatistikPage() {
 
   if (!data)
     return (
-      <DashboardLayout>
+      <>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
           <p className="text-slate-500 animate-pulse">
             Memuat data statistik...
           </p>
         </div>
-      </DashboardLayout>
+      </>
     );
 
   const agendaProgress = (data.agenda.responded / data.agenda.total) * 100 || 0;
@@ -46,7 +45,9 @@ export default function StatistikPage() {
 
   return (
     <div className="space-y-8">
-      {/* HEADLINE */}
+      <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+        Statistik
+      </h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <InfoCard title="Total Agenda" value={data.agenda.total} />
         <InfoCard
@@ -61,7 +62,6 @@ export default function StatistikPage() {
         />
       </div>
 
-      {/* AGENDA INFOGRAFIS */}
       <Card>
         <CardHeader>
           <CardTitle>Progress Agenda</CardTitle>
@@ -75,7 +75,6 @@ export default function StatistikPage() {
         </CardContent>
       </Card>
 
-      {/* RESPONSE INFOGRAFIS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -109,8 +108,6 @@ export default function StatistikPage() {
     </div>
   );
 }
-
-/* ===== COMPONENT ===== */
 
 function InfoCard({
   title,

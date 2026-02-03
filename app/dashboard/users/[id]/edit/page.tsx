@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Link } from "lucide-react";
 
 interface Payload {
   name: string;
@@ -84,7 +85,14 @@ export default function EditUserPage() {
   }
 
   if (fetching) {
-    return <div className="text-center py-20">Memuat data...</div>;
+    return (
+      <>
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+          <p className="text-slate-500 animate-pulse">Memuat data users...</p>
+        </div>
+      </>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,7 +131,7 @@ export default function EditUserPage() {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload), // Gunakan payload, bukan form
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -149,7 +157,6 @@ export default function EditUserPage() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Nama */}
             <div className="space-y-2">
               <Label>Nama Lengkap</Label>
               <Input
@@ -159,7 +166,6 @@ export default function EditUserPage() {
               />
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
               <Label>Email</Label>
               <Input
@@ -170,7 +176,6 @@ export default function EditUserPage() {
               />
             </div>
 
-            {/* Role */}
             <div className="space-y-2">
               <Label>Role</Label>
               <Select
@@ -188,7 +193,6 @@ export default function EditUserPage() {
               </Select>
             </div>
 
-            {/* Nama Seksi - Muncul jika role kepala_seksi */}
             {form.role === "kepala_seksi" ||
               (form.role === "kepala" && (
                 <div className="space-y-2">
@@ -233,14 +237,11 @@ export default function EditUserPage() {
             </div>
 
             <div className="flex flex-col md:flex-row gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => router.back()}
-              >
-                Batal
-              </Button>
+              <Link href="/dashboard/users" className="w-full">
+                <Button variant="outline" className="w-full">
+                  Batal
+                </Button>
+              </Link>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Menyimpan..." : "Update User"}
               </Button>

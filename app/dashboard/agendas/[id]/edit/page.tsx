@@ -112,7 +112,7 @@ const EditAgendaPage = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Edit Agenda</CardTitle>
+        <CardTitle className="text-3xl font-bold">Edit Agenda</CardTitle>
       </CardHeader>
 
       <CardContent>

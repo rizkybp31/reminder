@@ -67,7 +67,7 @@ export default function AgendaCalendarPage() {
       <main className="container py-6S">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-slate-900">
+            <CardTitle className="text-3xl font-bold">
               Kalender Agenda
             </CardTitle>
           </CardHeader>
@@ -96,11 +96,9 @@ export default function AgendaCalendarPage() {
                   footerToolbar={{
                     left: "prev,next today",
                     center: "",
-                    right: "dayGridMonth",
                   }}
                   buttonText={{
                     today: "Hari ini",
-                    month: "Bulan",
                   }}
                   eventClick={(info) => {
                     setSelectedAgenda(info.event.extendedProps as Agenda);

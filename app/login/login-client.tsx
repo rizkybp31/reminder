@@ -80,7 +80,6 @@ export default function LoginClient() {
             </div>
           </CardHeader>
 
-          {/* Start form login */}
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Error Alert */}
@@ -93,7 +92,6 @@ export default function LoginClient() {
                 </Alert>
               )}
 
-              {/* Start input email for login */}
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -109,9 +107,7 @@ export default function LoginClient() {
                   />
                 </Field>
               </FieldGroup>
-              {/* End input email for login */}
 
-              {/* Start input password for login */}
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="Password">Password</FieldLabel>
@@ -127,9 +123,7 @@ export default function LoginClient() {
                   />
                 </Field>
               </FieldGroup>
-              {/* End input password for login */}
 
-              {/* Submit Button */}
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? (
                   <>
@@ -142,7 +136,6 @@ export default function LoginClient() {
               </Button>
             </form>
           </CardContent>
-          {/* End form login */}
         </Card>
 
         <p className="text-center text-muted-foreground text-xs mt-6">

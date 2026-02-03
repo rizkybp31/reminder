@@ -2,12 +2,12 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { DashboardLayout } from "../components/dashboard-layout";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar,
   CheckCircle,
@@ -20,6 +20,8 @@ import {
   UserCheck,
   LayoutDashboard,
   Loader2,
+  Inbox,
+  Trash,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeID } from "date-fns/locale";
@@ -35,6 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import Link from "next/link";
 
 interface Agenda {
   id: string;
@@ -64,26 +67,30 @@ interface Agenda {
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [delegatedAgendas, setDelegatedAgendas] = useState<Agenda[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    responded: 0,
-    delegated: 0,
-  });
-
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isKepalaRutan = session?.user?.role === "kepala_rutan";
-  const isKepalaSeksi = session?.user?.role === "kepala_seksi";
+
+  // Memisahkan agenda berdasarkan status secara otomatis (Memoized)
+  const pendingAgendas = useMemo(
+    () => agendas.filter((a) => a.status === "pending"),
+    [agendas],
+  );
+
+  const completedAgendas = useMemo(
+    () => agendas.filter((a) => a.status !== "pending"),
+    [agendas],
+  );
 
   useEffect(() => {
     if (status === "authenticated") {
       fetchAgendas();
     }
-  }, [status, agendas.length]);
+  }, [status]);
 
   const fetchAgendas = async () => {
     try {
@@ -96,28 +103,8 @@ export default function DashboardPage() {
       }
 
       const data = await res.json();
-      const myOwn = data.agendas || [];
-      const forMe = data.delegatedAgendas || [];
-
-      setAgendas(myOwn);
-      setDelegatedAgendas(forMe);
-
-      const uniqueAgendaIds = new Set<string>();
-      const allAgendas = [...myOwn, ...forMe];
-      allAgendas.forEach((agenda) => uniqueAgendaIds.add(agenda.id));
-
-      const uniqueAgendas = Array.from(uniqueAgendaIds).map(
-        (id) => allAgendas.find((a) => a.id === id)!,
-      );
-
-      setStats({
-        total: uniqueAgendas.length,
-        pending: uniqueAgendas.filter((a) => a.status === "pending").length,
-        responded: uniqueAgendas.filter(
-          (a) => a.status === "responded" || a.response,
-        ).length,
-        delegated: forMe.length,
-      });
+      setAgendas(data.agendas || []);
+      setDelegatedAgendas(data.delegatedAgendas || []);
     } catch (error) {
       console.error(error);
       toast.error("Terjadi kesalahan saat memuat agenda");
@@ -150,14 +137,20 @@ export default function DashboardPage() {
   }) => {
     const isOwner =
       session?.user?.email === agenda.createdBy?.email ||
-      session?.user?.id === agenda.createdBy?.id;
+      session?.user?.id === agenda.createdBy?.id ||
+      session?.user?.role === "kepala_rutan";
+
+    const isPending = agenda.status === "pending";
 
     return (
       <Card
-        key={agenda.id}
-        className={`hover:shadow-md transition-all ${
-          isDelegated ? "border-l-4 border-l-blue-500 shadow-sm" : ""
-        }`}
+        className={`transition-all border-l-4 ${
+          isDelegated
+            ? "border-l-blue-500 bg-blue-50/30"
+            : isPending
+              ? "border-l-orange-500 bg-white"
+              : "border-l-emerald-500 bg-slate-50/50"
+        } hover:shadow-md`}
       >
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -167,15 +160,18 @@ export default function DashboardPage() {
                   {agenda.title}
                 </h3>
                 <Badge
-                  variant={
-                    agenda.status === "pending" ? "secondary" : "default"
+                  variant={isPending ? "outline" : "default"}
+                  className={
+                    isPending
+                      ? "text-orange-600 border-orange-200"
+                      : "bg-emerald-600"
                   }
                 >
-                  {agenda.status === "pending" ? "Menunggu" : "Selesai"}
+                  {isPending ? "Menunggu Respons" : "Selesai"}
                 </Badge>
                 {isDelegated && (
                   <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
-                    <UserCheck className="w-3 h-3 mr-1" /> Tugas Delegasi
+                    <UserCheck className="w-3 h-3 mr-1" /> Delegasi
                   </Badge>
                 )}
               </div>
@@ -201,27 +197,26 @@ export default function DashboardPage() {
                   <User className="h-4 w-4" />
                   <span>
                     {agenda.createdBy?.name}{" "}
-                    {agenda.createdBy?.seksiName
-                      ? `(${agenda.createdBy?.seksiName})`
-                      : ""}
+                    {agenda.createdBy?.seksiName &&
+                      `(${agenda.createdBy?.seksiName})`}
                   </span>
                 </div>
               </div>
 
               {agenda.response && (
-                <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-100">
-                  <p className="text-xs font-semibold uppercase text-slate-400 mb-1">
-                    Status Respons
+                <div className="mt-4 p-3 bg-white/50 rounded-md border border-slate-200">
+                  <p className="text-[10px] font-bold uppercase text-slate-400 mb-1 tracking-wider">
+                    Hasil Keputusan
                   </p>
                   <div className="text-sm">
-                    <span className="font-medium text-slate-700">
+                    <span className="font-semibold text-slate-700">
                       {agenda.response.responseType === "diwakilkan"
-                        ? `Diwakilkan ke: ${agenda.response.delegateName}`
-                        : `Keputusan: ${agenda.response.responseType}`}
+                        ? `Diwakilkan: ${agenda.response.delegateName}`
+                        : `Status: ${agenda.response.responseType.toUpperCase()}`}
                     </span>
                     {agenda.response.notes && (
-                      <p className="italic text-slate-500 mt-1">
-                        {`"${agenda.response.notes}"`}
+                      <p className="italic text-slate-500 mt-1 text-xs">
+                        &ldquo;{agenda.response.notes}&rdquo;
                       </p>
                     )}
                   </div>
@@ -229,44 +224,43 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="flex flex-col md:flex-row gap-2 justify-end">
-              {isKepalaRutan &&
-                !agenda.response &&
-                agenda.status === "pending" && (
+            <div className="flex flex-row md:flex-col gap-2">
+              {isKepalaRutan && isPending && (
+                <Link href={`/dashboard/agendas/${agenda.id}`}>
                   <Button
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    onClick={() =>
-                      router.push(`/dashboard/agendas/${agenda.id}`)
-                    }
+                    className="bg-orange-600 hover:bg-orange-700 w-full"
                   >
-                    <UserCheck className="w-4 h-4 mr-2" /> Beri Respons
+                    <UserCheck className="w-4 h-4 mr-2" /> Respons
                   </Button>
-                )}
-
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => router.push(`/dashboard/agendas/${agenda.id}`)}
-              >
-                <Eye className="w-4 h-4 mr-2" /> Detail
-              </Button>
+                </Link>
+              )}
+              <Link href={`/dashboard/agendas/${agenda.id}`}>
+                <Button size="sm" variant="outline" className="w-full">
+                  <Eye className="w-4 h-4 mr-2" /> Detail
+                </Button>
+              </Link>
 
               {isOwner && (
                 <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      router.push(`/dashboard/agendas/${agenda.id}/edit`)
-                    }
-                  >
-                    <Edit className="w-4 h-4 mr-2" /> Edit
-                  </Button>
+                  <Link href={`/dashboard/agendas/${agenda.id}/edit`}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="w-full justify-start md:justify-center"
+                    >
+                      <Edit className="w-4 h-4 mr-2" /> Edit
+                    </Button>
+                  </Link>
 
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="w-auto text-destructive hover:text-destructive hover:bg-destructive/10 justify-start md:justify-center"
+                      >
+                        <Trash />
                         {deletingId === agenda.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
@@ -276,18 +270,18 @@ export default function DashboardPage() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                        <AlertDialogTitle>Hapus Agenda?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Apakah Anda yakin ingin menghapus agenda{" "}
-                          <strong>{agenda.title}</strong>? Tindakan ini tidak
-                          dapat dibatalkan.
+                          Tindakan ini permanen. Agenda{" "}
+                          <strong>{agenda.title}</strong> akan dihapus dari
+                          sistem.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => handleDelete(agenda.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          className="bg-destructive text-white hover:bg-destructive/90"
                         >
                           Hapus
                         </AlertDialogAction>
@@ -304,112 +298,115 @@ export default function DashboardPage() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Ringkasan Dashboard
-            </h1>
-            <p className="text-slate-500">
-              Selamat datang kembali, {session?.user?.name}
-            </p>
-          </div>
-
-          <Button
-            onClick={() => router.push("/dashboard/agendas/create")}
-            className="shadow-lg shadow-primary/20"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Buat Agenda Baru
-          </Button>
+    <div className="max-w-6xl mx-auto space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Dashboard
+          </h1>
+          <p className="text-slate-500">
+            Selamat Datang, {session?.user?.name}.
+          </p>
         </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-4">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
-            <p className="text-slate-500 animate-pulse">
-              Memuat data dashboard...
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                title="Total Agenda"
-                value={stats.total}
-                icon={<LayoutDashboard />}
-                desc="Semua agenda unik"
-              />
-              <StatCard
-                title="Pending"
-                value={stats.pending}
-                icon={<Clock />}
-                desc="Butuh respons"
-                color="text-orange-600"
-              />
-              <StatCard
-                title="Selesai"
-                value={stats.responded}
-                icon={<CheckCircle />}
-                desc="Sudah direspons"
-                color="text-green-600"
-              />
-              {(isKepalaSeksi || isKepalaRutan) && (
-                <StatCard
-                  title="Delegasi"
-                  value={stats.delegated}
-                  icon={<UserCheck />}
-                  desc="Tugas untuk Anda"
-                  color="text-blue-600"
-                />
-              )}
-            </div>
-
-            <Separator />
-
-            <div className="space-y-10">
-              <section className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-1 bg-primary rounded-full" />
-                  <h2 className="text-xl font-semibold">Semua Agenda</h2>
-                </div>
-                <div className="grid gap-4">
-                  {agendas.length > 0 ? (
-                    agendas.map((a) => <AgendaCard key={a.id} agenda={a} />)
-                  ) : (
-                    <EmptyState message="Belum ada agenda yang dibuat." />
-                  )}
-                </div>
-              </section>
-
-              {delegatedAgendas.length > 0 && (
-                <section className="space-y-4 pt-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-1 bg-blue-500 rounded-full" />
-                    <h2 className="text-xl font-semibold text-blue-900">
-                      Agenda Diwakilkan Ke Saya
-                    </h2>
-                  </div>
-                  <div className="grid gap-4">
-                    {delegatedAgendas.map((a) => (
-                      <AgendaCard
-                        key={`delegated-${a.id}`}
-                        agenda={a}
-                        isDelegated
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-          </>
-        )}
+        <Button
+          onClick={() => router.push("/dashboard/agendas/create")}
+          className="shadow-md"
+        >
+          <Plus className="mr-2 h-4 w-4" /> Buat Agenda
+        </Button>
       </div>
-    </DashboardLayout>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-slate-500 animate-pulse font-medium">
+            Menyelaraskan data...
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total"
+              value={agendas.length + delegatedAgendas.length}
+              icon={<LayoutDashboard />}
+              desc="Semua agenda"
+            />
+            <StatCard
+              title="Menunggu"
+              value={pendingAgendas.length}
+              icon={<Clock />}
+              desc="Perlu tindak lanjut"
+              color="text-orange-600"
+            />
+            <StatCard
+              title="Selesai"
+              value={completedAgendas.length}
+              icon={<CheckCircle />}
+              desc="Sudah direspons"
+              color="text-emerald-600"
+            />
+            <StatCard
+              title="Delegasi"
+              value={delegatedAgendas.length}
+              icon={<UserCheck />}
+              desc="Tugas untuk Anda"
+              color="text-blue-600"
+            />
+          </div>
+
+          <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 h-12 mb-6">
+              <TabsTrigger
+                value="pending"
+                className="data-[state=active]:text-orange-700"
+              >
+                Menunggu ({pendingAgendas.length})
+              </TabsTrigger>
+              <TabsTrigger value="completed">
+                Selesai ({completedAgendas.length})
+              </TabsTrigger>
+              <TabsTrigger
+                value="delegated"
+                className="data-[state=active]:text-blue-700"
+              >
+                Delegasi ({delegatedAgendas.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="pending" className="space-y-4 outline-none">
+              {pendingAgendas.length > 0 ? (
+                pendingAgendas.map((a) => <AgendaCard key={a.id} agenda={a} />)
+              ) : (
+                <EmptyState message="Semua agenda sudah ditanggapi." />
+              )}
+            </TabsContent>
+
+            <TabsContent value="completed" className="space-y-4 outline-none">
+              {completedAgendas.length > 0 ? (
+                completedAgendas.map((a) => (
+                  <AgendaCard key={a.id} agenda={a} />
+                ))
+              ) : (
+                <EmptyState message="Belum ada agenda yang selesai." />
+              )}
+            </TabsContent>
+
+            <TabsContent value="delegated" className="space-y-4 outline-none">
+              {delegatedAgendas.length > 0 ? (
+                delegatedAgendas.map((a) => (
+                  <AgendaCard key={a.id} agenda={a} isDelegated />
+                ))
+              ) : (
+                <EmptyState message="Tidak ada tugas delegasi untuk Anda saat ini." />
+              )}
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
+    </div>
   );
 }
-
-// --- Helper Components ---
 
 function StatCard({
   title,
@@ -425,16 +422,16 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-slate-500">
+    <Card className="overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <CardTitle className="text-xs font-bold uppercase text-slate-400 tracking-wider">
           {title}
         </CardTitle>
-        <div className="text-slate-400">{icon}</div>
+        <div className="text-slate-300">{icon}</div>
       </CardHeader>
       <CardContent>
-        <div className={`text-3xl font-bold ${color}`}>{value}</div>
-        <p className="text-xs text-slate-400 mt-1">{desc}</p>
+        <div className={`text-2xl font-black ${color}`}>{value}</div>
+        <p className="text-[10px] text-slate-400 font-medium">{desc}</p>
       </CardContent>
     </Card>
   );
@@ -442,9 +439,9 @@ function StatCard({
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="text-center py-12 border-2 border-dashed rounded-xl border-slate-200">
-      <Calendar className="mx-auto h-10 w-10 text-slate-300 mb-3" />
-      <p className="text-slate-500">{message}</p>
+    <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-2xl border-slate-200 bg-slate-50/50">
+      <Inbox className="h-12 w-12 text-slate-300 mb-4" />
+      <p className="text-slate-500 font-medium">{message}</p>
     </div>
   );
 }
