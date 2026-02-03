@@ -224,7 +224,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="flex flex-row md:flex-col gap-2">
+            <div className="flex flex-wrap flex-row md:flex-col gap-2">
               {isKepalaRutan && isPending && (
                 <Link href={`/dashboard/agendas/${agenda.id}`}>
                   <Button
