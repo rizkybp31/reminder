@@ -238,7 +238,7 @@ export default function EditUserPage() {
 
             <div className="flex flex-col md:flex-row gap-3">
               <Link href="/dashboard/users">
-                <Button variant="outline" className="w-full border-4">
+                <Button variant="outline" className="w-full">
                   Batal
                 </Button>
               </Link>
