@@ -53,6 +53,7 @@ const NavItems = ({
   isMobile = false,
   navigation,
   pathname,
+  setOpen,
 }: NavItemsProps) => (
   <>
     {navigation.map(
@@ -60,6 +61,11 @@ const NavItems = ({
         item.show && (
           <Link key={item.name} href={item.href} passHref>
             <Button
+              onClick={() => {
+                if (isMobile) {
+                  setOpen(false);
+                }
+              }}
               variant={"ghost"}
               className={cn(
                 "relative font-medium transition-colors hover:text-primary",

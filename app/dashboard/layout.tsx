@@ -17,7 +17,7 @@ const DashboardLayout = async ({
   return (
     <>
       <NavigationBar />
-      <main className="container py-6 px-6">{children}</main>
+      <main className="container py-6 px-4">{children}</main>
     </>
   );
 };
