@@ -36,6 +36,7 @@ model User {
   email         String    @unique
   password      String
   role          Role
+  phoneNumber   String?   @map("phone_number")
   seksiName     String?   @map("seksi_name")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")

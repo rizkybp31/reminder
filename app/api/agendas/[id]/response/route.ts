@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendNotification } from "@/lib/whatsapp";
 
 export async function POST(
   request: NextRequest,
@@ -78,6 +79,42 @@ export async function POST(
         where: { id },
         data: { status: "responded" },
       });
+    }
+
+    // --- Di dalam API Update Respons ---
+
+    // 1. Notif ke Pembuat Agenda
+    // 1. Notif ke Pembuat Agenda
+    const creator = await prisma.user.findUnique({
+      where: { id: agenda.createdById },
+      select: { phoneNumber: true, name: true }, // Tambah name
+    });
+
+    const statusInfo = responseType === "hadir" ? "✅ HADIR" : "👥 DIWAKILKAN";
+    await sendNotification(
+      creator?.phoneNumber,
+      `📢 *INFO AGENDA*\n\nHalo *${creator?.name}*, agenda Anda:\n\n` +
+        `📌 *Judul:* ${agenda.title}\n` +
+        `📝 *Keputusan:* *${statusInfo}*\n\n` +
+        `Silakan cek detailnya di dashboard.`,
+    );
+
+    // 2. Notif ke Penerima Delegasi (Hanya jika 'diwakilkan')
+    if (responseType === "diwakilkan" && delegateEmail) {
+      const delegateUser = await prisma.user.findUnique({
+        where: { email: delegateEmail },
+        select: { phoneNumber: true, name: true },
+      });
+
+      if (delegateUser?.phoneNumber) {
+        const delegateMsg =
+          `📝 *PENUGASAN DELEGASI*\n\n` +
+          `Halo *${delegateUser.name}*, Anda ditugaskan untuk menghadiri agenda:\n\n` +
+          `📌 *Judul:* ${agenda.title}\n` +
+          `📅 *Waktu:* ${new Date(agenda.startDateTime).toLocaleString("id-ID")}`;
+
+        await sendNotification(delegateUser.phoneNumber, delegateMsg);
+      }
     }
 
     return NextResponse.json({ success: true, response }, { status: 201 });

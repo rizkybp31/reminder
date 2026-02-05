@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { supabase } from "@/lib/supabase-server";
+import { sendNotification } from "@/lib/whatsapp";
 
 export async function GET(req: NextRequest) {
   try {
@@ -138,6 +139,23 @@ export async function POST(req: NextRequest) {
         attachmentUrl,
       },
     });
+
+    const kepalaRutan = await prisma.user.findFirst({
+      where: { role: "kepala_rutan" },
+      select: { phoneNumber: true, name: true },
+    });
+
+    if (kepalaRutan?.phoneNumber) {
+      const message =
+        `🔔 *AGENDA BARU*\n\n` +
+        `Halo *${kepalaRutan.name}*, ada agenda baru yang memerlukan respons Anda:\n\n` +
+        `📌 *Judul:* ${title}\n` +
+        `📍 *Lokasi:* ${location}\n` +
+        `📅 *Waktu:* ${new Date(startDateTime).toLocaleString("id-ID")}\n\n` +
+        `Silakan cek dashboard untuk memberikan keputusan.`;
+
+      await sendNotification(kepalaRutan.phoneNumber, message);
+    }
 
     return NextResponse.json(agenda, { status: 201 });
   } catch (error) {
