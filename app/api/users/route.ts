@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
 // GET - List all users (Kepala Rutan only)
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -117,13 +117,16 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
+    // Create user
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
         role,
-        seksiName: role === "kepala_seksi" ? seksiName : null,
+        // Izinkan seksiName disimpan jika role adalah 'kepala_seksi' ATAU 'kepala'
+        seksiName:
+          role === "kepala_seksi" || role === "kepala" ? seksiName : null,
       },
       select: {
         id: true,

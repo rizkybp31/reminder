@@ -6,7 +6,6 @@ import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar,
@@ -38,6 +37,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
+import { toTitleCase } from "@/utils/toTitleCase";
 
 interface Agenda {
   id: string;
@@ -47,27 +47,19 @@ interface Agenda {
   startDateTime: string;
   endDateTime: string;
   status: string;
-  createdBy: {
-    id: string;
-    name: string;
-    email: string;
-    seksiName: string;
-  };
+  createdBy: { id: string; name: string; email: string; seksiName: string };
   response?: {
     responseType: string;
     delegateName?: string;
     delegateEmail?: string;
     notes?: string;
-    user: {
-      name: string;
-    };
+    user: { name: string };
   };
 }
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [delegatedAgendas, setDelegatedAgendas] = useState<Agenda[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,39 +67,29 @@ export default function DashboardPage() {
 
   const isKepalaRutan = session?.user?.role === "kepala_rutan";
 
-  // Memisahkan agenda berdasarkan status secara otomatis (Memoized)
+  // Filter menggunakan status "pending" huruf kecil
   const pendingAgendas = useMemo(
     () => agendas.filter((a) => a.status === "pending"),
     [agendas],
   );
-
   const completedAgendas = useMemo(
     () => agendas.filter((a) => a.status !== "pending"),
     [agendas],
   );
 
   useEffect(() => {
-    if (status === "authenticated") {
-      fetchAgendas();
-    }
+    if (status === "authenticated") fetchAgendas();
   }, [status]);
 
   const fetchAgendas = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/agendas");
-
-      if (!res.ok) {
-        if (res.status === 401) return router.push("/login");
-        throw new Error("Gagal mengambil data");
-      }
-
       const data = await res.json();
       setAgendas(data.agendas || []);
       setDelegatedAgendas(data.delegatedAgendas || []);
     } catch (error) {
-      console.error(error);
-      toast.error("Terjadi kesalahan saat memuat agenda");
+      toast.error("Gagal memuat data");
     } finally {
       setLoading(false);
     }
@@ -128,6 +110,7 @@ export default function DashboardPage() {
     }
   };
 
+  // Desain AgendaCard tetap sama
   const AgendaCard = ({
     agenda,
     isDelegated = false,
@@ -138,19 +121,12 @@ export default function DashboardPage() {
     const isOwner =
       session?.user?.email === agenda.createdBy?.email ||
       session?.user?.id === agenda.createdBy?.id ||
-      session?.user?.role === "kepala_rutan";
-
+      isKepalaRutan;
     const isPending = agenda.status === "pending";
 
     return (
       <Card
-        className={`transition-all border-l-4 ${
-          isDelegated
-            ? "border-l-blue-500 bg-blue-50/30"
-            : isPending
-              ? "border-l-orange-500 bg-white"
-              : "border-l-emerald-500 bg-slate-50/50"
-        } hover:shadow-md`}
+        className={`transition-all border-l-4 ${isDelegated ? "border-l-blue-500 bg-blue-50/30" : isPending ? "border-l-orange-500 bg-white" : "border-l-emerald-500 bg-slate-50/50"} hover:shadow-md`}
       >
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -171,18 +147,19 @@ export default function DashboardPage() {
                 </Badge>
                 {isDelegated && (
                   <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
-                    <UserCheck className="w-3 h-3 mr-1" /> Delegasi
+                    <UserCheck className="w-3 h-3 mr-1" />{" "}
+                    {isKepalaRutan && agenda.response?.responseType === "hadir"
+                      ? "Akan Hadir"
+                      : "Delegasi"}
                   </Badge>
                 )}
               </div>
-
               <p className="text-sm text-slate-600 line-clamp-2">
                 {agenda.description}
               </p>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-500">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-4 w-4" />{" "}
                   <span>
                     {format(new Date(agenda.startDateTime), "PPP p", {
                       locale: localeID,
@@ -190,11 +167,10 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>{agenda.location}</span>
+                  <MapPin className="h-4 w-4" /> <span>{agenda.location}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
+                  <User className="h-4 w-4" />{" "}
                   <span>
                     {agenda.createdBy?.name}{" "}
                     {agenda.createdBy?.seksiName &&
@@ -202,7 +178,6 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
-
               {agenda.response && (
                 <div className="mt-4 p-3 bg-white/50 rounded-md border border-slate-200">
                   <p className="text-[10px] font-bold uppercase text-slate-400 mb-1 tracking-wider">
@@ -212,7 +187,9 @@ export default function DashboardPage() {
                     <span className="font-semibold text-slate-700">
                       {agenda.response.responseType === "diwakilkan"
                         ? `Diwakilkan: ${agenda.response.delegateName}`
-                        : `Status: ${agenda.response.responseType.toUpperCase()}`}
+                        : agenda.response.responseType === "hadir"
+                          ? "Kepala Rutan Hadir"
+                          : `Status: ${toTitleCase(agenda.response.responseType.toUpperCase())}`}
                     </span>
                     {agenda.response.notes && (
                       <p className="italic text-slate-500 mt-1 text-xs">
@@ -223,7 +200,6 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
-
             <div className="flex flex-wrap flex-row md:flex-col gap-2">
               {isKepalaRutan && isPending && (
                 <Link href={`/dashboard/agendas/${agenda.id}`}>
@@ -240,7 +216,6 @@ export default function DashboardPage() {
                   <Eye className="w-4 h-4 mr-2" /> Detail
                 </Button>
               </Link>
-
               {isOwner && (
                 <>
                   <Link href={`/dashboard/agendas/${agenda.id}/edit`}>
@@ -252,7 +227,6 @@ export default function DashboardPage() {
                       <Edit className="w-4 h-4 mr-2" /> Edit
                     </Button>
                   </Link>
-
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -260,7 +234,7 @@ export default function DashboardPage() {
                         variant="ghost"
                         className="w-auto text-destructive hover:text-destructive hover:bg-destructive/10 justify-start md:justify-center"
                       >
-                        <Trash />
+                        <Trash />{" "}
                         {deletingId === agenda.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
@@ -273,8 +247,7 @@ export default function DashboardPage() {
                         <AlertDialogTitle>Hapus Agenda?</AlertDialogTitle>
                         <AlertDialogDescription>
                           Tindakan ini permanen. Agenda{" "}
-                          <strong>{agenda.title}</strong> akan dihapus dari
-                          sistem.
+                          <strong>{agenda.title}</strong> akan dihapus.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -328,7 +301,7 @@ export default function DashboardPage() {
           <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total"
-              value={agendas.length + delegatedAgendas.length}
+              value={agendas.length}
               icon={<LayoutDashboard />}
               desc="Semua agenda"
             />
@@ -347,10 +320,12 @@ export default function DashboardPage() {
               color="text-emerald-600"
             />
             <StatCard
-              title="Delegasi"
+              title={isKepalaRutan ? "Akan Hadir" : "Delegasi"}
               value={delegatedAgendas.length}
               icon={<UserCheck />}
-              desc="Tugas untuk Anda"
+              desc={
+                isKepalaRutan ? "Agenda yang Anda hadiri" : "Tugas untuk Anda"
+              }
               color="text-blue-600"
             />
           </div>
@@ -370,7 +345,8 @@ export default function DashboardPage() {
                 value="delegated"
                 className="data-[state=active]:text-blue-700"
               >
-                Delegasi ({delegatedAgendas.length})
+                {isKepalaRutan ? "Agenda Hadir" : "Delegasi"} (
+                {delegatedAgendas.length})
               </TabsTrigger>
             </TabsList>
 
@@ -398,7 +374,13 @@ export default function DashboardPage() {
                   <AgendaCard key={a.id} agenda={a} isDelegated />
                 ))
               ) : (
-                <EmptyState message="Tidak ada tugas delegasi untuk Anda saat ini." />
+                <EmptyState
+                  message={
+                    isKepalaRutan
+                      ? "Tidak ada agenda yang akan dihadiri."
+                      : "Tidak ada tugas delegasi untuk Anda."
+                  }
+                />
               )}
             </TabsContent>
           </Tabs>
@@ -408,6 +390,7 @@ export default function DashboardPage() {
   );
 }
 
+// Fungsi StatCard & EmptyState tetap sama
 function StatCard({
   title,
   value,

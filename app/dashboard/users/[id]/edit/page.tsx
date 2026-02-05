@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface Payload {
   name: string;
@@ -148,7 +149,12 @@ export default function EditUserPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="max-w mx-auto">
+      <Link href="/dashboard/users">
+        <Button variant="ghost" className="mb-2">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+        </Button>
+      </Link>
       <Card>
         <CardHeader>
           <CardTitle>Edit User</CardTitle>
@@ -236,13 +242,13 @@ export default function EditUserPage() {
               />
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3">
+            <div className="flex flex-col md:flex-row justify-end gap-3">
               <Link href="/dashboard/users">
                 <Button variant="outline" className="w-full">
                   Batal
                 </Button>
               </Link>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-auto" disabled={loading}>
                 {loading ? "Menyimpan..." : "Update User"}
               </Button>
             </div>

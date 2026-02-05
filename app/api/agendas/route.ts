@@ -2,24 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Prisma, StatusAgenda } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { supabase } from "@/lib/supabase-server";
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status");
+    const userEmail = session.user.email?.toLowerCase();
+    const userId = session.user.id;
+    const userRole = session.user.role;
 
     const where: Prisma.AgendaWhereInput = {};
 
-    if (session.user.role === "kepala_seksi") {
+    if (userRole !== "kepala_rutan") {
       where.OR = [
-        { createdById: session.user.id },
+        { status: "pending" },
+        { createdById: userId },
         {
           response: {
             delegateEmail: session.user.email,
@@ -29,56 +31,40 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    if (status && status !== "all") {
-      where.status = status.toUpperCase() as StatusAgenda;
-    }
-
-    const agendas = await prisma.agenda.findMany({
+    const allAgendas = await prisma.agenda.findMany({
       where,
       include: {
         createdBy: {
-          select: {
-            name: true,
-            email: true,
-            seksiName: true,
-          },
+          select: { id: true, name: true, email: true, seksiName: true },
         },
         response: {
           include: {
-            user: {
-              select: {
-                name: true,
-              },
-            },
+            user: { select: { name: true } },
           },
         },
       },
-      orderBy: {
-        startDateTime: "desc",
-      },
+      orderBy: { startDateTime: "desc" },
     });
 
-    let myAgendas = agendas;
-    let delegatedAgendas: typeof agendas = [];
+    const delegatedAgendas = allAgendas.filter((a) => {
+      const isDelegatedToMe =
+        a.response?.responseType === "diwakilkan" &&
+        a.response?.delegateEmail?.toLowerCase() === userEmail;
 
-    if (session.user.role === "kepala_seksi") {
-      myAgendas = agendas.filter((a) => a.createdById === session.user.id);
-      delegatedAgendas = agendas.filter(
-        (a) =>
-          a.response &&
-          a.response.delegateEmail === session.user.email &&
-          a.response.responseType === "diwakilkan",
-      );
-    }
+      const isKepalaRutanHadir =
+        userRole === "kepala_rutan" && a.response?.responseType === "hadir";
+
+      return isDelegatedToMe || isKepalaRutanHadir;
+    });
 
     return NextResponse.json({
-      agendas: myAgendas,
-      delegatedAgendas,
+      agendas: allAgendas,
+      delegatedAgendas: delegatedAgendas,
     });
   } catch (error) {
-    console.error("Error fetching agendas:", error);
+    console.error("GET_AGENDAS_ERROR:", error);
     return NextResponse.json(
-      { error: "Failed to fetch agendas" },
+      { error: "Internal Server Error" },
       { status: 500 },
     );
   }
@@ -114,7 +100,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "File harus PDF" }, { status: 400 });
       }
 
-      // ✅ Use Buffer, not Uint8Array
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
@@ -137,7 +122,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // ✅ Get public URL
       const { data } = supabase.storage.from("lampiran").getPublicUrl(filePath);
 
       attachmentUrl = data.publicUrl;

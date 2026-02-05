@@ -144,16 +144,12 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete agenda (Kepala Seksi only, and only if not responded)
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
-    // if (!session || session.user.role !== "kepala_seksi") {
-    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // }
 
     const { id } = await params;
 
@@ -165,10 +161,6 @@ export async function DELETE(
     if (!agenda) {
       return NextResponse.json({ error: "Agenda not found" }, { status: 404 });
     }
-
-    // if (agenda.createdById !== session?.user.id) {
-    //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // }
 
     if (agenda.response) {
       return NextResponse.json(

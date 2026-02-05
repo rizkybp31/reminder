@@ -52,6 +52,8 @@ export default function UsersPage() {
     }
   };
 
+  console.table(users);
+
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
