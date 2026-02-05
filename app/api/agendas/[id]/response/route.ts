@@ -80,19 +80,14 @@ export async function POST(
         data: { status: "responded" },
       });
     }
-
-    // --- Di dalam API Update Respons ---
-
-    // 1. Notif ke Pembuat Agenda
-    // 1. Notif ke Pembuat Agenda
     const creator = await prisma.user.findUnique({
       where: { id: agenda.createdById },
-      select: { phoneNumber: true, name: true }, // Tambah name
+      select: { phoneNumber: true, name: true },
     });
 
     const statusInfo = responseType === "hadir" ? "✅ HADIR" : "👥 DIWAKILKAN";
     await sendNotification(
-      creator?.phoneNumber,
+      creator?.phoneNumber || null,
       `📢 *INFO AGENDA*\n\nHalo *${creator?.name}*, agenda Anda:\n\n` +
         `📌 *Judul:* ${agenda.title}\n` +
         `📝 *Keputusan:* *${statusInfo}*\n\n` +
