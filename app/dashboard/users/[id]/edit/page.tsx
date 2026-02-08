@@ -28,6 +28,7 @@ import { ArrowLeft } from "lucide-react";
 interface Payload {
   name: string;
   email: string;
+  phoneNumber: string; // Tambahkan ini
   password?: string;
   role: string;
   seksiName?: string | null;
@@ -43,6 +44,7 @@ export default function EditUserPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phoneNumber: "", // Tambahkan ini
     password: "",
     confirmPassword: "",
     role: "",
@@ -59,6 +61,7 @@ export default function EditUserPage() {
         setForm({
           name: data.name || "",
           email: data.email || "",
+          phoneNumber: data.phoneNumber || "", // Ambil dari API
           password: "",
           confirmPassword: "",
           role: data.role || "",
@@ -75,8 +78,6 @@ export default function EditUserPage() {
     if (params.id) fetchUser();
   }, [params.id, router]);
 
-  console.table(form);
-
   if (session?.user?.role !== "kepala_rutan") {
     return (
       <div className="text-center py-20 text-muted-foreground">
@@ -87,20 +88,19 @@ export default function EditUserPage() {
 
   if (fetching) {
     return (
-      <>
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
-          <p className="text-slate-500 animate-pulse">Memuat data users...</p>
-        </div>
-      </>
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
+        <p className="text-slate-500 animate-pulse">Memuat data users...</p>
+      </div>
     );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.name || !form.email || !form.role) {
-      toast.error("Nama, Email, dan Role wajib diisi");
+    // Tambahkan phoneNumber ke validasi wajib
+    if (!form.name || !form.email || !form.role || !form.phoneNumber) {
+      toast.error("Nama, Email, Nomor Telepon, dan Role wajib diisi");
       return;
     }
 
@@ -120,6 +120,7 @@ export default function EditUserPage() {
     const payload: Payload = {
       name: form.name,
       email: form.email,
+      phoneNumber: form.phoneNumber, // Masukkan ke payload
       role: form.role,
       seksiName: form.seksiName,
     };
@@ -182,6 +183,19 @@ export default function EditUserPage() {
               />
             </div>
 
+            {/* INPUT NOMOR TELEPON */}
+            <div className="space-y-2">
+              <Label>Nomor WhatsApp/Telepon</Label>
+              <Input
+                type="tel"
+                placeholder="Contoh: 08123456789"
+                value={form.phoneNumber}
+                onChange={(e) =>
+                  setForm({ ...form, phoneNumber: e.target.value })
+                }
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>Role</Label>
               <Select
@@ -199,26 +213,24 @@ export default function EditUserPage() {
               </Select>
             </div>
 
-            {form.role === "kepala_seksi" ||
-              (form.role === "kepala" && (
-                <div className="space-y-2">
-                  <Label>Nama</Label>
-                  <Input
-                    placeholder="Contoh: Keamanan"
-                    value={form.seksiName}
-                    onChange={(e) =>
-                      setForm({ ...form, seksiName: e.target.value })
-                    }
-                  />
-                </div>
-              ))}
+            {(form.role === "kepala_seksi" || form.role === "kepala") && (
+              <div className="space-y-2">
+                <Label>Nama Seksi/Jabatan</Label>
+                <Input
+                  placeholder="Contoh: Keamanan"
+                  value={form.seksiName}
+                  onChange={(e) =>
+                    setForm({ ...form, seksiName: e.target.value })
+                  }
+                />
+              </div>
+            )}
 
             <hr className="my-4" />
             <p className="text-xs text-muted-foreground italic">
               * Biarkan password kosong jika tidak ingin mengubahnya
             </p>
 
-            {/* Password */}
             <div className="space-y-2">
               <Label>Password Baru</Label>
               <Input
@@ -229,7 +241,6 @@ export default function EditUserPage() {
               />
             </div>
 
-            {/* Confirm Password */}
             <div className="space-y-2">
               <Label>Konfirmasi Password Baru</Label>
               <Input

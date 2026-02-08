@@ -61,10 +61,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, email, password, role, seksiName } = body;
+    const { name, email, password, role, seksiName, phoneNumber } = body;
 
     // Validasi
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password || !role || !phoneNumber) {
       return NextResponse.json(
         { error: "Nama, email, password, dan role harus diisi" },
         { status: 400 },
@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         email,
+        phoneNumber,
         password: hashedPassword,
         role,
         // Izinkan seksiName disimpan jika role adalah 'kepala_seksi' ATAU 'kepala'
@@ -132,6 +133,7 @@ export async function POST(req: NextRequest) {
         id: true,
         name: true,
         email: true,
+        phoneNumber: true,
         role: true,
         seksiName: true,
         createdAt: true,

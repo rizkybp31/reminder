@@ -33,6 +33,7 @@ export default function CreateUserPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
     role: "",
@@ -53,7 +54,13 @@ export default function CreateUserPage() {
 
     console.log("Submitting form:", form); // Debugging log
 
-    if (!form.name || !form.email || !form.password || !form.role) {
+    if (
+      !form.name ||
+      !form.email ||
+      !form.password ||
+      !form.role ||
+      !form.phoneNumber
+    ) {
       toast.error("Lengkapi semua field wajib");
       return;
     }
@@ -132,6 +139,18 @@ export default function CreateUserPage() {
                 placeholder="email@rutan.go.id"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nomor WhatsApp/Telepon</Label>
+              <Input
+                type="tel"
+                placeholder="Contoh: 08123456789"
+                value={form.phoneNumber}
+                onChange={(e) =>
+                  setForm({ ...form, phoneNumber: e.target.value })
+                }
               />
             </div>
 

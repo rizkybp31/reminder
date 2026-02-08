@@ -19,10 +19,12 @@ export async function GET(req: NextRequest) {
 
     const where: Prisma.AgendaWhereInput = {};
 
+    // PERBAIKAN LOGIKA DI SINI
     if (userRole !== "kepala_rutan") {
       where.OR = [
-        { status: "pending" },
-        { createdById: userId },
+        { status: "pending" }, // Masih menunggu respons
+        { status: "responded" }, // <--- TAMBAHKAN INI agar agenda selesai tidak hilang
+        { createdById: userId }, // Agenda yang dibuat sendiri
         {
           response: {
             delegateEmail: session.user.email,
@@ -31,6 +33,7 @@ export async function GET(req: NextRequest) {
         },
       ];
     }
+    // Jika Role = kepala_rutan, 'where' tetap kosong {} (artinya ambil semua)
 
     const allAgendas = await prisma.agenda.findMany({
       where,
@@ -47,6 +50,7 @@ export async function GET(req: NextRequest) {
       orderBy: { startDateTime: "desc" },
     });
 
+    // Filter untuk "Agenda Saya" (Delegasi atau Kehadiran Karutan)
     const delegatedAgendas = allAgendas.filter((a) => {
       const isDelegatedToMe =
         a.response?.responseType === "diwakilkan" &&
@@ -55,7 +59,9 @@ export async function GET(req: NextRequest) {
       const isKepalaRutanHadir =
         userRole === "kepala_rutan" && a.response?.responseType === "hadir";
 
-      return isDelegatedToMe || isKepalaRutanHadir;
+      const isCreatedByMe = a.createdById === userId;
+
+      return isDelegatedToMe || isKepalaRutanHadir || isCreatedByMe;
     });
 
     return NextResponse.json({

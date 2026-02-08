@@ -47,13 +47,15 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, email, role, seksiName, password } = body;
+    const { name, email, role, seksiName, phoneNumber, password } = body;
 
     const updateData: Prisma.UserUpdateInput = {
       name,
       email,
       role,
-      seksiName,
+      phoneNumber,
+      seksiName:
+        role === "kepala_seksi" || role === "kepala" ? seksiName : null,
     };
 
     if (password && password.trim() !== "") {
@@ -75,6 +77,7 @@ export async function PUT(
     return NextResponse.json(safeUser);
   } catch (error: unknown) {
     console.error("UPDATE_USER_ERROR:", error);
+
     if (
       error &&
       typeof error === "object" &&
@@ -86,6 +89,7 @@ export async function PUT(
         { status: 400 },
       );
     }
+
     return NextResponse.json(
       { error: "Gagal memperbarui data user" },
       { status: 500 },
