@@ -21,6 +21,7 @@ import {
   Loader2,
   Inbox,
   Trash,
+  FileText,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeID } from "date-fns/locale";
@@ -61,21 +62,10 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [agendas, setAgendas] = useState<Agenda[]>([]);
-  const [delegatedAgendas, setDelegatedAgendas] = useState<Agenda[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isKepalaRutan = session?.user?.role === "kepala_rutan";
-
-  // Filter menggunakan status "pending" huruf kecil
-  const pendingAgendas = useMemo(
-    () => agendas.filter((a) => a.status === "pending"),
-    [agendas],
-  );
-  const completedAgendas = useMemo(
-    () => agendas.filter((a) => a.status !== "pending"),
-    [agendas],
-  );
 
   useEffect(() => {
     if (status === "authenticated") fetchAgendas();
@@ -86,8 +76,8 @@ export default function DashboardPage() {
       setLoading(true);
       const res = await fetch("/api/agendas");
       const data = await res.json();
+      // Kita asumsikan API mengirimkan semua list agenda yang relevan
       setAgendas(data.agendas || []);
-      setDelegatedAgendas(data.delegatedAgendas || []);
     } catch (error) {
       toast.error("Gagal memuat data");
     } finally {
@@ -110,23 +100,73 @@ export default function DashboardPage() {
     }
   };
 
-  // Desain AgendaCard tetap sama
+  // 1. Filter Pending
+  const pendingAgendas = useMemo(
+    () => agendas.filter((a) => a.status === "pending"),
+    [agendas],
+  );
+
+  // 2. Filter Selesai
+  const completedAgendas = useMemo(
+    () => agendas.filter((a) => a.status !== "pending"),
+    [agendas],
+  );
+
+  // 3. LOGIKA UTAMA: Agenda Saya
+  const myAgendas = useMemo(() => {
+    const userEmail = session?.user?.email;
+    const userId = session?.user?.id;
+    const userName = session?.user?.name;
+
+    if (isKepalaRutan) {
+      // Kepala Rutan: Agenda yang dia buat ATAU dia pilih "Hadir"
+      return agendas.filter((a) => {
+        const isCreator =
+          a.createdBy?.email === userEmail || a.createdBy?.id === userId;
+        const isAttending = a.response?.responseType === "hadir";
+        return isCreator || isAttending;
+      });
+    } else {
+      // User Lain (Kasi/Staf): Agenda yang didelegasikan ke mereka
+      return agendas.filter((a) => {
+        const isDelegatedToMe =
+          a.response?.responseType === "diwakilkan" &&
+          (a.response?.delegateEmail === userEmail ||
+            a.response?.delegateName === userName);
+        return isDelegatedToMe;
+      });
+    }
+  }, [agendas, isKepalaRutan, session?.user]);
+
   const AgendaCard = ({
     agenda,
-    isDelegated = false,
+    isMyAgendaTab = false,
   }: {
     agenda: Agenda;
-    isDelegated?: boolean;
+    isMyAgendaTab?: boolean;
   }) => {
     const isOwner =
       session?.user?.email === agenda.createdBy?.email ||
       session?.user?.id === agenda.createdBy?.id ||
       isKepalaRutan;
+
     const isPending = agenda.status === "pending";
+
+    // Identifikasi tipe item di tab "Agenda Saya"
+    const isActualDelegate =
+      !isKepalaRutan && agenda.response?.responseType === "diwakilkan";
+    const isKarutanAttending =
+      isKepalaRutan && agenda.response?.responseType === "hadir";
 
     return (
       <Card
-        className={`transition-all border-l-4 ${isDelegated ? "border-l-blue-500 bg-blue-50/30" : isPending ? "border-l-orange-500 bg-white" : "border-l-emerald-500 bg-slate-50/50"} hover:shadow-md`}
+        className={`transition-all border-l-4 ${
+          isMyAgendaTab
+            ? "border-l-blue-500 bg-blue-50/30"
+            : isPending
+              ? "border-l-orange-500 bg-white"
+              : "border-l-emerald-500 bg-slate-50/50"
+        } hover:shadow-md`}
       >
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -145,21 +185,31 @@ export default function DashboardPage() {
                 >
                   {isPending ? "Menunggu Respons" : "Selesai"}
                 </Badge>
-                {isDelegated && (
-                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
-                    <UserCheck className="w-3 h-3 mr-1" />{" "}
-                    {isKepalaRutan && agenda.response?.responseType === "hadir"
-                      ? "Akan Hadir"
-                      : "Delegasi"}
-                  </Badge>
+
+                {/* Badge Khusus untuk Tab Agenda Saya */}
+                {isMyAgendaTab && (
+                  <>
+                    {isActualDelegate && (
+                      <Badge className="bg-blue-600 text-white border-none">
+                        <UserCheck className="w-3 h-3 mr-1" /> Delegasi Saya
+                      </Badge>
+                    )}
+                    {isKarutanAttending && (
+                      <Badge className="bg-indigo-600 text-white border-none">
+                        <CheckCircle className="w-3 h-3 mr-1" /> Saya Hadir
+                      </Badge>
+                    )}
+                  </>
                 )}
               </div>
+
               <p className="text-sm text-slate-600 line-clamp-2">
                 {agenda.description}
               </p>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-500">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />{" "}
+                  <Calendar className="h-4 w-4" />
                   <span>
                     {format(new Date(agenda.startDateTime), "PPP p", {
                       locale: localeID,
@@ -170,7 +220,7 @@ export default function DashboardPage() {
                   <MapPin className="h-4 w-4" /> <span>{agenda.location}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />{" "}
+                  <User className="h-4 w-4" />
                   <span>
                     {agenda.createdBy?.name}{" "}
                     {agenda.createdBy?.seksiName &&
@@ -178,6 +228,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
+
               {agenda.response && (
                 <div className="mt-4 p-3 bg-white/50 rounded-md border border-slate-200">
                   <p className="text-[10px] font-bold uppercase text-slate-400 mb-1 tracking-wider">
@@ -200,6 +251,7 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+
             <div className="flex flex-wrap flex-row md:flex-col gap-2">
               {isKepalaRutan && isPending && (
                 <Link href={`/dashboard/agendas/${agenda.id}`}>
@@ -234,7 +286,7 @@ export default function DashboardPage() {
                         variant="ghost"
                         className="w-auto text-destructive hover:text-destructive hover:bg-destructive/10 justify-start md:justify-center"
                       >
-                        <Trash />{" "}
+                        <Trash className="w-4 h-4 mr-2" />
                         {deletingId === agenda.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
@@ -320,11 +372,13 @@ export default function DashboardPage() {
               color="text-emerald-600"
             />
             <StatCard
-              title={isKepalaRutan ? "Akan Hadir" : "Delegasi"}
-              value={delegatedAgendas.length}
-              icon={<UserCheck />}
+              title="Agenda Saya"
+              value={myAgendas.length}
+              icon={<FileText />}
               desc={
-                isKepalaRutan ? "Agenda yang Anda hadiri" : "Tugas untuk Anda"
+                isKepalaRutan
+                  ? "Agenda dibuat / dihadiri"
+                  : "Tugas delegasi Anda"
               }
               color="text-blue-600"
             />
@@ -342,11 +396,10 @@ export default function DashboardPage() {
                 Selesai ({completedAgendas.length})
               </TabsTrigger>
               <TabsTrigger
-                value="delegated"
+                value="my-agendas"
                 className="data-[state=active]:text-blue-700"
               >
-                {isKepalaRutan ? "Agenda Hadir" : "Delegasi"} (
-                {delegatedAgendas.length})
+                Agenda Saya ({myAgendas.length})
               </TabsTrigger>
             </TabsList>
 
@@ -368,16 +421,16 @@ export default function DashboardPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="delegated" className="space-y-4 outline-none">
-              {delegatedAgendas.length > 0 ? (
-                delegatedAgendas.map((a) => (
-                  <AgendaCard key={a.id} agenda={a} isDelegated />
+            <TabsContent value="my-agendas" className="space-y-4 outline-none">
+              {myAgendas.length > 0 ? (
+                myAgendas.map((a) => (
+                  <AgendaCard key={a.id} agenda={a} isMyAgendaTab />
                 ))
               ) : (
                 <EmptyState
                   message={
                     isKepalaRutan
-                      ? "Tidak ada agenda yang akan dihadiri."
+                      ? "Tidak ada agenda yang Anda buat atau hadiri."
                       : "Tidak ada tugas delegasi untuk Anda."
                   }
                 />
@@ -390,7 +443,6 @@ export default function DashboardPage() {
   );
 }
 
-// Fungsi StatCard & EmptyState tetap sama
 function StatCard({
   title,
   value,
