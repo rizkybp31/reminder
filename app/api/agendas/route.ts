@@ -19,12 +19,11 @@ export async function GET(req: NextRequest) {
 
     const where: Prisma.AgendaWhereInput = {};
 
-    // PERBAIKAN LOGIKA DI SINI
     if (userRole !== "kepala_rutan") {
       where.OR = [
-        { status: "pending" }, // Masih menunggu respons
-        { status: "responded" }, // <--- TAMBAHKAN INI agar agenda selesai tidak hilang
-        { createdById: userId }, // Agenda yang dibuat sendiri
+        { status: "pending" },
+        { status: "responded" },
+        { createdById: userId },
         {
           response: {
             delegateEmail: session.user.email,
@@ -33,7 +32,6 @@ export async function GET(req: NextRequest) {
         },
       ];
     }
-    // Jika Role = kepala_rutan, 'where' tetap kosong {} (artinya ambil semua)
 
     const allAgendas = await prisma.agenda.findMany({
       where,
