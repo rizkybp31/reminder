@@ -76,9 +76,8 @@ export default function DashboardPage() {
       setLoading(true);
       const res = await fetch("/api/agendas");
       const data = await res.json();
-      // Kita asumsikan API mengirimkan semua list agenda yang relevan
       setAgendas(data.agendas || []);
-    } catch (error) {
+    } catch {
       toast.error("Gagal memuat data");
     } finally {
       setLoading(false);
@@ -100,26 +99,22 @@ export default function DashboardPage() {
     }
   };
 
-  // 1. Filter Pending
   const pendingAgendas = useMemo(
     () => agendas.filter((a) => a.status === "pending"),
     [agendas],
   );
 
-  // 2. Filter Selesai
   const completedAgendas = useMemo(
     () => agendas.filter((a) => a.status !== "pending"),
     [agendas],
   );
 
-  // 3. LOGIKA UTAMA: Agenda Saya
   const myAgendas = useMemo(() => {
     const userEmail = session?.user?.email;
     const userId = session?.user?.id;
     const userName = session?.user?.name;
 
     if (isKepalaRutan) {
-      // Kepala Rutan: Agenda yang dia buat ATAU dia pilih "Hadir"
       return agendas.filter((a) => {
         const isCreator =
           a.createdBy?.email === userEmail || a.createdBy?.id === userId;
@@ -127,7 +122,6 @@ export default function DashboardPage() {
         return isCreator || isAttending;
       });
     } else {
-      // User Lain (Kasi/Staf): Agenda yang didelegasikan ke mereka
       return agendas.filter((a) => {
         const isDelegatedToMe =
           a.response?.responseType === "diwakilkan" &&
@@ -152,7 +146,6 @@ export default function DashboardPage() {
 
     const isPending = agenda.status === "pending";
 
-    // Identifikasi tipe item di tab "Agenda Saya"
     const isActualDelegate =
       !isKepalaRutan && agenda.response?.responseType === "diwakilkan";
     const isKarutanAttending =
@@ -186,7 +179,6 @@ export default function DashboardPage() {
                   {isPending ? "Menunggu Respons" : "Selesai"}
                 </Badge>
 
-                {/* Badge Khusus untuk Tab Agenda Saya */}
                 {isMyAgendaTab && (
                   <>
                     {isActualDelegate && (
@@ -345,7 +337,7 @@ export default function DashboardPage() {
         <div className="flex flex-col items-center justify-center h-64 gap-3">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
           <p className="text-slate-500 animate-pulse font-medium">
-            Menyelaraskan data...
+            Loading data...
           </p>
         </div>
       ) : (

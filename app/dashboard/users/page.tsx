@@ -80,7 +80,7 @@ export default function UsersPage() {
   }, []);
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 w-auto mx-auto">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1 className="text-3xl font-bold">Manajemen User</h1>
         <Button onClick={() => router.push("/dashboard/users/create")}>
@@ -97,10 +97,10 @@ export default function UsersPage() {
         <CardContent>
           {loading ? (
             <>
-              <div className="flex flex-col items-center justify-center h-64 gap-4">
-                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
-                <p className="text-slate-500 animate-pulse">
-                  Memuat data users...
+              <div className="flex flex-col items-center justify-center h-64 gap-3">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-slate-500 animate-pulse font-medium">
+                  Loading data...
                 </p>
               </div>
             </>

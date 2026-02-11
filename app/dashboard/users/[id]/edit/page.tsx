@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 interface Payload {
   name: string;
@@ -88,9 +88,11 @@ export default function EditUserPage() {
 
   if (fetching) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
-        <p className="text-slate-500 animate-pulse">Memuat data users...</p>
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-slate-500 animate-pulse font-medium">
+          Loading data...
+        </p>
       </div>
     );
   }

@@ -16,7 +16,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, MapPin, User, Clock, File } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  User,
+  Clock,
+  File,
+  Loader2,
+} from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -150,9 +158,11 @@ export default function AgendaDetailPage() {
 
   if (loading)
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
-        <p className="text-slate-500 animate-pulse">Memuat data agenda...</p>
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-slate-500 animate-pulse font-medium">
+          Loading data...
+        </p>
       </div>
     );
 

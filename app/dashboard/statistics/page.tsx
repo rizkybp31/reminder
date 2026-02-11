@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 type Statistik = {
   agenda: {
@@ -30,10 +31,10 @@ export default function StatistikPage() {
   if (!data)
     return (
       <>
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-primary"></div>
-          <p className="text-slate-500 animate-pulse">
-            Memuat data statistik...
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-slate-500 animate-pulse font-medium">
+            Loading data...
           </p>
         </div>
       </>
@@ -44,7 +45,7 @@ export default function StatistikPage() {
   const hadirProgress = (data.response.hadir / data.response.total) * 100 || 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-8">
       <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
         Statistik
       </h1>
