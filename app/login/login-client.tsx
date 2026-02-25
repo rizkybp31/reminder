@@ -60,31 +60,58 @@ export default function LoginClient() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+      {/* Background Image Container */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src={rutan}
+          alt="Background image"
+          fill
+          priority
+          className="object-cover"
+        />
+        {/* Dark Overlay agar teks tetap terbaca */}
+        <div className="absolute inset-0 bg-slate-950/40 dark:bg-slate-950/60" />
+      </div>
+
       <div className="w-full max-w-md z-10">
-        <Card className="shadow-2xl border-slate-200 dark:border-slate-800">
+        {/* GLASS CARD EFFECT */}
+        <Card className="bg-white/10 dark:bg-slate-900/20 backdrop-blur-xl border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] ring-1 ring-white/20">
           <CardHeader className="space-y-4">
-            {/* logo */}
             <div className="flex justify-center">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center gap-4">
-                <Image src={kemenimipas} alt="logo rutan" />
-                <Image src={ditjenpas} alt="logo rutan" />
-                <Image src={logo} alt="logo rutan" />
+              <div className="flex items-center justify-center gap-4 bg-white/10 p-2 rounded-2xl backdrop-blur-md">
+                <Image
+                  src={kemenimipas}
+                  alt="logo kemenimipas"
+                  width={40}
+                  height={40}
+                />
+                <Image
+                  src={ditjenpas}
+                  alt="logo ditjenpas"
+                  width={40}
+                  height={40}
+                />
+                <Image src={logo} alt="logo rutan" width={40} height={40} />
               </div>
             </div>
             <div className="text-center space-y-2">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-2xl font-bold text-white drop-shadow-md">
                 SISDAPIM RUSARANG
               </CardTitle>
-              <CardDescription>Silakan login untuk melanjutkan</CardDescription>
+              <CardDescription className="text-white/80">
+                Silakan login untuk melanjutkan
+              </CardDescription>
             </div>
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Error Alert */}
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <Alert variant="destructive">
+                <Alert
+                  variant="destructive"
+                  className="bg-red-500/20 backdrop-blur-md border-red-500/50 text-white"
+                >
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     {getFriendlyErrorMessage(error)}
@@ -92,9 +119,11 @@ export default function LoginClient() {
                 </Alert>
               )}
 
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
+              <FieldGroup className="space-y-4">
+                <Field className="space-y-1.5">
+                  <FieldLabel htmlFor="email" className="text-white">
+                    Email
+                  </FieldLabel>
                   <Input
                     id="email"
                     type="email"
@@ -103,14 +132,14 @@ export default function LoginClient() {
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
                     required
-                    className="h-11"
+                    className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:bg-white/20 transition-all"
                   />
                 </Field>
-              </FieldGroup>
 
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="Password">Password</FieldLabel>
+                <Field className="space-y-1.5">
+                  <FieldLabel htmlFor="password" className="text-white">
+                    Password
+                  </FieldLabel>
                   <Input
                     id="password"
                     type="password"
@@ -119,12 +148,16 @@ export default function LoginClient() {
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
                     required
-                    className="h-11"
+                    className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:bg-white/20 transition-all"
                   />
                 </Field>
               </FieldGroup>
 
-              <Button type="submit" className="w-full h-11" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full h-11 bg-white hover:bg-white/90 text-slate-900 font-semibold shadow-lg"
+                disabled={loading}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -138,15 +171,10 @@ export default function LoginClient() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-muted-foreground text-xs mt-6">
+        <p className="text-center text-white/60 text-xs mt-6 drop-shadow-sm">
           © 2026 Sistem Reminder Rutan. All rights reserved.
         </p>
       </div>
-      <Image
-        src={rutan}
-        alt="Background image"
-        className="absolute inset-0 object-cover w-full h-full opacity-30"
-      />
     </div>
   );
 }

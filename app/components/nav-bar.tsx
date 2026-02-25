@@ -225,7 +225,7 @@ const NavigationBar = () => {
 
             <div className="hidden sm:block border-l pl-4 h-8 flex flex-col justify-center">
               <h1 className="text-sm font-bold leading-tight uppercase">
-                Sistem Reminder
+                SISDAPIM RUSARANG
               </h1>
               <p className="text-[10px] text-muted-foreground uppercase">
                 {isKepalaRutan ? "Kepala Rutan" : "Kepala Seksi"}
@@ -241,7 +241,7 @@ const NavigationBar = () => {
               >
                 <Avatar className="h-10 w-10 border border-muted">
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    {getInitials(session?.user?.name || "")}
+                    <Image src={logo} alt="user profile" />
                   </AvatarFallback>
                 </Avatar>
               </Button>

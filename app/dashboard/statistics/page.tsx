@@ -20,36 +20,62 @@ type Statistik = {
 
 export default function StatistikPage() {
   const [data, setData] = useState<Statistik | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/statistic")
-      .then((res) => res.json())
-      .then(setData)
-      .catch(console.error);
+      .then((res) => {
+        if (!res.ok) throw new Error("Gagal mengambil data");
+        return res.json();
+      })
+      .then((json) => {
+        console.log("Data dari API:", json); // Cek struktur data di sini
+        setData(json);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err.message);
+      });
   }, []);
 
-  if (!data)
+  if (error) {
     return (
-      <>
-        <div className="flex flex-col items-center justify-center h-64 gap-3">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-slate-500 animate-pulse font-medium">
-            Loading data...
-          </p>
-        </div>
-      </>
+      <div className="flex h-64 items-center justify-center text-red-500">
+        Error: {error}
+      </div>
     );
+  }
 
-  const agendaProgress = (data.agenda.responded / data.agenda.total) * 100 || 0;
+  // Cek apakah data dan sub-propertinya ada sebelum render
+  if (!data || !data.agenda || !data.response) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-3">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="font-medium animate-pulse text-slate-500">
+          Memuat data statistik...
+        </p>
+      </div>
+    );
+  }
 
-  const hadirProgress = (data.response.hadir / data.response.total) * 100 || 0;
+  // Menggunakan fallback value 0 dan pengecekan pembagi agar tidak NaN/Infinity
+  const agendaProgress =
+    data.agenda.total > 0
+      ? (data.agenda.responded / data.agenda.total) * 100
+      : 0;
+
+  const hadirProgress =
+    data.response.total > 0
+      ? (data.response.hadir / data.response.total) * 100
+      : 0;
 
   return (
     <div className="space-y-8 p-4 md:p-8">
-      <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+      <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
         Statistik
       </h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <InfoCard title="Total Agenda" value={data.agenda.total} />
         <InfoCard
           title="Agenda yang Direspon"
@@ -76,7 +102,7 @@ export default function StatistikPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Partisipasi Kehadiran</CardTitle>
@@ -100,7 +126,7 @@ export default function StatistikPage() {
             <div className="text-5xl font-bold text-blue-600">
               {data.response.total}
             </div>
-            <p className="text-muted-foreground mt-2">
+            <p className="mt-2 text-muted-foreground">
               Total respon terhadap agenda
             </p>
           </CardContent>
@@ -109,6 +135,8 @@ export default function StatistikPage() {
     </div>
   );
 }
+
+// --- Komponen Pendukung ---
 
 function InfoCard({
   title,
@@ -123,7 +151,7 @@ function InfoCard({
     <Card>
       <CardContent className="pt-6">
         <p className="text-muted-foreground">{title}</p>
-        <h2 className={`text-4xl font-bold ${color}`}>{value}</h2>
+        <h2 className={`text-4xl font-bold ${color}`}>{value ?? 0}</h2>
       </CardContent>
     </Card>
   );
@@ -144,10 +172,10 @@ function ProgressBar({
         <span>{label}</span>
         <span>{value.toFixed(0)}%</span>
       </div>
-      <div className="w-full bg-muted rounded-full h-3">
+      <div className="h-3 w-full rounded-full bg-muted">
         <div
-          className={`${color} h-3 rounded-full transition-all`}
-          style={{ width: `${value}%` }}
+          className={`${color} h-3 rounded-full transition-all duration-500`}
+          style={{ width: `${Math.min(value, 100)}%` }}
         />
       </div>
     </div>
@@ -158,7 +186,7 @@ function StatRow({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex justify-between border-b py-2">
       <span>{label}</span>
-      <span className="font-semibold">{value}</span>
+      <span className="font-semibold">{value ?? 0}</span>
     </div>
   );
 }
