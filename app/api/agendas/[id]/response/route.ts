@@ -18,6 +18,7 @@ export async function POST(
 
     const session = await getServerSession(authOptions);
 
+    // Proteksi: Hanya Kepala Rutan yang diizinkan merespons
     if (!session || session.user.role !== "kepala_rutan") {
       return NextResponse.json(
         { error: "Hanya Kepala Rutan yang dapat merespons agenda" },
@@ -52,6 +53,7 @@ export async function POST(
 
     let response;
 
+    // Simpan atau Perbarui Respon di Database
     if (existingResponse) {
       response = await prisma.response.update({
         where: { agendaId: id },
@@ -80,21 +82,37 @@ export async function POST(
         data: { status: "responded" },
       });
     }
+
+    // --- PROSES NOTIFIKASI WHATSAPP ---
+
+    // 1. Ambil data pembuat agenda (Creator/Staf)
     const creator = await prisma.user.findUnique({
       where: { id: agenda.createdById },
       select: { phoneNumber: true, name: true },
     });
 
-    const statusInfo = responseType === "hadir" ? "✅ HADIR" : "👥 DIWAKILKAN";
-    await sendNotification(
-      creator?.phoneNumber || null,
-      `📢 *INFO AGENDA*\n\nHalo *${creator?.name}*, agenda Anda:\n\n` +
-        `📌 *Judul:* ${agenda.title}\n` +
-        `📝 *Keputusan:* *${statusInfo}*\n\n` +
-        `Silakan cek detailnya di dashboard.`,
-    );
+    // Format Status berdasarkan pilihan Kepala Rutan
+    let statusInfo = "";
+    if (responseType === "hadir") {
+      statusInfo = "✅ *KEPALA RUTAN HADIR*";
+    } else if (responseType === "diwakilkan") {
+      statusInfo = `👥 *DIWAKILKAN* (Penerima: ${delegateName || "Staf"})`;
+    } else {
+      statusInfo = "❌ *TIDAK HADIR*";
+    }
 
-    // 2. Notif ke Penerima Delegasi (Hanya jika 'diwakilkan')
+    // Kirim notif ke pembuat agenda
+    const creatorMsg =
+      `📢 *INFO RESPONS AGENDA*\n\n` +
+      `Halo *${creator?.name}*, agenda yang Anda buat telah direspon:\n\n` +
+      `📌 *Judul:* ${agenda.title}\n` +
+      `📝 *Keputusan:* ${statusInfo}\n` +
+      (notes ? `💬 *Catatan:* ${notes}\n` : "") +
+      `\nSilakan cek detail lengkapnya di dashboard SISDAPIM.`;
+
+    await sendNotification(creator?.phoneNumber || null, creatorMsg);
+
+    // 2. Notif ke Penerima Delegasi (Hanya jika status 'diwakilkan')
     if (responseType === "diwakilkan" && delegateEmail) {
       const delegateUser = await prisma.user.findUnique({
         where: { email: delegateEmail },
@@ -104,9 +122,17 @@ export async function POST(
       if (delegateUser?.phoneNumber) {
         const delegateMsg =
           `📝 *PENUGASAN DELEGASI*\n\n` +
-          `Halo *${delegateUser.name}*, Anda ditugaskan untuk menghadiri agenda:\n\n` +
+          `Halo *${delegateUser.name}*, Anda mendapatkan tugas dari Kepala Rutan untuk menghadiri agenda:\n\n` +
           `📌 *Judul:* ${agenda.title}\n` +
-          `📅 *Waktu:* ${new Date(agenda.startDateTime).toLocaleString("id-ID")}`;
+          `📅 *Waktu:* ${new Date(agenda.startDateTime).toLocaleString(
+            "id-ID",
+            {
+              dateStyle: "full",
+              timeStyle: "short",
+            },
+          )} WIB\n` +
+          (notes ? `💬 *Catatan Pimpinan:* ${notes}\n` : "") +
+          `\nMohon laksanakan tugas dengan penuh tanggung jawab.`;
 
         await sendNotification(delegateUser.phoneNumber, delegateMsg);
       }
