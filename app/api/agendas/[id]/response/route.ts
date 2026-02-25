@@ -5,11 +5,16 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/whatsapp";
 
+// Paksa route agar selalu dinamis untuk menghindari error build statis
+export const dynamic = "force-dynamic";
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } 
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
+  try {
+    // <--- BLOK TRY DIMULAI DI SINI
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: "Invalid agenda id" }, { status: 400 });
@@ -79,12 +84,16 @@ export async function POST(
         data: { status: "responded" },
       });
     }
+
     const creator = await prisma.user.findUnique({
       where: { id: agenda.createdById },
       select: { phoneNumber: true, name: true },
     });
 
-    const statusInfo = responseType === "hadir" ? "✅ HADIR" : "👥 DIWAKILKAN";
+    // Perbaikan pesan sesuai permintaan sebelumnya
+    const statusInfo =
+      responseType === "hadir" ? "✅ KEPALA RUTAN HADIR" : "👥 DIWAKILKAN";
+
     await sendNotification(
       creator?.phoneNumber || null,
       `📢 *INFO AGENDA*\n\nHalo *${creator?.name}*, agenda Anda:\n\n` +
@@ -93,7 +102,6 @@ export async function POST(
         `Silakan cek detailnya di dashboard.`,
     );
 
-    // 2. Notif ke Penerima Delegasi (Hanya jika 'diwakilkan')
     if (responseType === "diwakilkan" && delegateEmail) {
       const delegateUser = await prisma.user.findUnique({
         where: { email: delegateEmail },
@@ -113,6 +121,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, response }, { status: 201 });
   } catch (error) {
+    // <--- PASANGAN CATCH SEKARANG VALID
     console.error("❌ Error creating response:", error);
     return NextResponse.json(
       { error: "Failed to create response" },
