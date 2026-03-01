@@ -48,7 +48,6 @@ export async function GET(req: NextRequest) {
       orderBy: { startDateTime: "desc" },
     });
 
-    // Filter untuk "Agenda Saya" (Delegasi atau Kehadiran Karutan)
     const delegatedAgendas = allAgendas.filter((a) => {
       const isDelegatedToMe =
         a.response?.responseType === "diwakilkan" &&
@@ -108,8 +107,7 @@ export async function POST(req: NextRequest) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      const fileExt = "pdf";
-      const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${session.user.id}-${Date.now()}.pdf`;
       const filePath = `agendas/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -128,10 +126,10 @@ export async function POST(req: NextRequest) {
       }
 
       const { data } = supabase.storage.from("lampiran").getPublicUrl(filePath);
-
       attachmentUrl = data.publicUrl;
     }
 
+    // Simpan ke database
     const agenda = await prisma.agenda.create({
       data: {
         title,
@@ -144,19 +142,44 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Cari data Kepala Rutan
     const kepalaRutan = await prisma.user.findFirst({
       where: { role: "kepala_rutan" },
       select: { phoneNumber: true, name: true },
     });
 
     if (kepalaRutan?.phoneNumber) {
+      // Format Waktu Indonesia
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      };
+
+      const formattedStart = new Date(startDateTime).toLocaleString(
+        "id-ID",
+        options,
+      );
+      const formattedEnd = new Date(endDateTime).toLocaleString(
+        "id-ID",
+        options,
+      );
+
+      // Pesan WhatsApp Lengkap
       const message =
-        `🔔 *AGENDA BARU*\n\n` +
-        `Halo *${kepalaRutan.name}*, ada agenda baru yang memerlukan respons Anda:\n\n` +
-        `📌 *Judul:* ${title}\n` +
-        `📍 *Lokasi:* ${location}\n` +
-        `📅 *Waktu:* ${new Date(startDateTime).toLocaleString("id-ID")}\n\n` +
-        `Silakan cek dashboard untuk memberikan keputusan.`;
+        `🔔 *AGENDA BARU PERLU RESPONS*\n\n` +
+        `Halo *${kepalaRutan.name}*,\n` +
+        `Terdapat agenda baru yang diajukan oleh *${session.user.name}*:\n\n` +
+        `📌 *JUDUL:* ${title}\n` +
+        `📍 *LOKASI:* ${location}\n` +
+        `📅 *MULAI:* ${formattedStart}\n` +
+        `🏁 *SELESAI:* ${formattedEnd}\n` +
+        `📝 *DESKRIPSI:* ${description || "-"}\n` +
+        (attachmentUrl ? `📎 *LAMPIRAN PDF:* ${attachmentUrl}\n` : "") +
+        `\nMohon segera melakukan pengecekan dan memberikan keputusan (Hadir/Delegasi) melalui dashboard aplikasi.`;
 
       await sendNotification(kepalaRutan.phoneNumber, message);
     }

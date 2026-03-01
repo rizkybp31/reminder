@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/whatsapp";
 
-// Paksa route agar selalu dinamis untuk menghindari error build statis
+// Paksa route agar selalu dinamis
 export const dynamic = "force-dynamic";
 
 export async function POST(
@@ -13,7 +13,6 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    // <--- BLOK TRY DIMULAI DI SINI
     const { id } = await params;
 
     if (!id) {
@@ -22,6 +21,7 @@ export async function POST(
 
     const session = await getServerSession(authOptions);
 
+    // Proteksi: Hanya Kepala Rutan yang bisa memberi respon
     if (!session || session.user.role !== "kepala_rutan") {
       return NextResponse.json(
         { error: "Hanya Kepala Rutan yang dapat merespons agenda" },
@@ -39,6 +39,7 @@ export async function POST(
       );
     }
 
+    // Ambil data agenda dari database
     const agenda = await prisma.agenda.findUnique({
       where: { id },
     });
@@ -50,6 +51,7 @@ export async function POST(
       );
     }
 
+    // Cek apakah sudah ada respon sebelumnya (Upsert logic)
     const existingResponse = await prisma.response.findUnique({
       where: { agendaId: id },
     });
@@ -79,29 +81,75 @@ export async function POST(
         },
       });
 
+      // Update status agenda menjadi 'responded' jika ini respon pertama
       await prisma.agenda.update({
         where: { id },
         data: { status: "responded" },
       });
     }
 
+    // Ambil data pembuat agenda (Creator) untuk dikirimi WA
     const creator = await prisma.user.findUnique({
       where: { id: agenda.createdById },
       select: { phoneNumber: true, name: true },
     });
 
-    // Perbaikan pesan sesuai permintaan sebelumnya
-    const statusInfo =
-      responseType === "hadir" ? "✅ KEPALA RUTAN HADIR" : "👥 DIWAKILKAN";
+    // --- PENYUSUNAN DETAIL PESAN WHATSAPP ---
+    const statusEmoji = responseType === "hadir" ? "✅" : "👥";
+    const statusLabel =
+      responseType === "hadir"
+        ? "KEPALA RUTAN AKAN HADIR"
+        : `DIWAKILKAN KEPADA: ${delegateName}`;
 
-    await sendNotification(
-      creator?.phoneNumber || null,
-      `📢 *INFO AGENDA*\n\nHalo *${creator?.name}*, agenda Anda:\n\n` +
-        `📌 *Judul:* ${agenda.title}\n` +
-        `📝 *Keputusan:* *${statusInfo}*\n\n` +
-        `Silakan cek detailnya di dashboard.`,
+    // Format Waktu Indonesia (Senin, 1 Januari 2024 pukul 08.00)
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    };
+
+    const formattedStart = new Date(agenda.startDateTime).toLocaleString(
+      "id-ID",
+      options,
+    );
+    const formattedEnd = new Date(agenda.endDateTime).toLocaleString(
+      "id-ID",
+      options,
     );
 
+    // Logic Lampiran: Jika URL tidak diawali http, kita asumsikan perlu prefix domain
+    let fileLink = "";
+    if (agenda.attachmentUrl) {
+      fileLink = agenda.attachmentUrl.startsWith("http")
+        ? agenda.attachmentUrl
+        : `${process.env.NEXT_PUBLIC_APP_URL || ""}${agenda.attachmentUrl}`;
+    }
+
+    const detailAgendaMsg =
+      `📌 *JUDUL:* ${agenda.title}\n` +
+      `📍 *LOKASI:* ${agenda.location}\n` +
+      `📅 *MULAI:* ${formattedStart}\n` +
+      `🏁 *SELESAI:* ${formattedEnd}\n` +
+      `📝 *DESKRIPSI:* ${agenda.description}\n` +
+      (fileLink ? `📎 *LAMPIRAN:* ${fileLink}\n` : "") +
+      (notes ? `💬 *CATATAN:* ${notes}\n` : "");
+
+    // 1. Kirim Notifikasi ke Pembuat Agenda
+    if (creator?.phoneNumber) {
+      await sendNotification(
+        creator.phoneNumber,
+        `📢 *UPDATE RESPONS AGENDA*\n\n` +
+          `Halo *${creator.name}*, agenda Anda telah direspons oleh Kepala Rutan:\n\n` +
+          `⚖️ *STATUS:* *${statusEmoji} ${statusLabel}*\n\n` +
+          detailAgendaMsg +
+          `\nSilakan cek detail lengkapnya di dashboard.`,
+      );
+    }
+
+    // 2. Kirim Notifikasi ke Penerima Delegasi (Jika ada)
     if (responseType === "diwakilkan" && delegateEmail) {
       const delegateUser = await prisma.user.findUnique({
         where: { email: delegateEmail },
@@ -109,22 +157,21 @@ export async function POST(
       });
 
       if (delegateUser?.phoneNumber) {
-        const delegateMsg =
+        await sendNotification(
+          delegateUser.phoneNumber,
           `📝 *PENUGASAN DELEGASI*\n\n` +
-          `Halo *${delegateUser.name}*, Anda ditugaskan untuk menghadiri agenda:\n\n` +
-          `📌 *Judul:* ${agenda.title}\n` +
-          `📅 *Waktu:* ${new Date(agenda.startDateTime).toLocaleString("id-ID")}`;
-
-        await sendNotification(delegateUser.phoneNumber, delegateMsg);
+            `Halo *${delegateUser.name}*, Anda ditugaskan oleh Kepala Rutan untuk menghadiri agenda berikut:\n\n` +
+            detailAgendaMsg +
+            `\nMohon kehadirannya tepat waktu.`,
+        );
       }
     }
 
     return NextResponse.json({ success: true, response }, { status: 201 });
   } catch (error) {
-    // <--- PASANGAN CATCH SEKARANG VALID
     console.error("❌ Error creating response:", error);
     return NextResponse.json(
-      { error: "Failed to create response" },
+      { error: "Terjadi kesalahan pada server saat mengirim respon" },
       { status: 500 },
     );
   }
