@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { supabase } from "@/lib/supabase-server";
 import { logActivity } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+
 // GET single agenda
 export async function GET(
   req: NextRequest,

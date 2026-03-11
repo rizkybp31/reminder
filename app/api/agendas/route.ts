@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase-server";
 import { sendNotification } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/logger";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
