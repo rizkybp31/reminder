@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Download, FileBarChart2 } from "lucide-react";
 import {
@@ -17,8 +17,10 @@ import {
   Legend
 } from "recharts";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { Button } from "@/components/ui/button";
+import { toPng } from "html-to-image";
+import { toast } from "sonner";
 
 type Statistik = {
   agenda: {
@@ -37,6 +39,10 @@ type Statistik = {
 export default function StatistikPage() {
   const [data, setData] = useState<Statistik | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const pieChartRef = useRef<HTMLDivElement>(null);
+  const barChartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/statistic")
@@ -96,29 +102,74 @@ export default function StatistikPage() {
     { name: "Diwakilkan", total: data.response.diwakilkan, color: "#3b82f6" },
   ];
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Laporan Statistik SISDAPIM RUSARANG", 14, 22);
-    doc.setFontSize(11);
-    doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")}`, 14, 30);
+  const exportPDF = async () => {
+    if (!data) return;
 
-    // @ts-ignore
-    doc.autoTable({
-      startY: 40,
-      head: [["Kategori", "Total"]],
-      body: [
-        ["Total Agenda", data.agenda.total],
-        ["Agenda Selesai", data.agenda.responded],
-        ["Agenda Menunggu", data.agenda.pending],
-        ["Total Respons", data.response.total],
-        ["Kepala Rutan Hadir", data.response.hadir],
-        ["Tidak Hadir", data.response.tidakHadir],
-        ["Diwakilkan", data.response.diwakilkan],
-      ],
-    });
+    setIsExporting(true);
+    try {
+      const doc = new jsPDF();
+      doc.setFontSize(22);
+      doc.setTextColor(30, 41, 59); // slate-800
+      doc.text("Laporan Statistik SISDAPIM RUSARANG", 14, 22);
 
-    doc.save(`statistik-agenda-${new Date().getTime()}.pdf`);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")}`, 14, 30);
+
+      // Data Table
+      autoTable(doc, {
+        startY: 40,
+        head: [["Kategori", "Total"]],
+        body: [
+          ["Total Agenda", data.agenda.total],
+          ["Agenda Selesai", data.agenda.responded],
+          ["Agenda Menunggu", data.agenda.pending],
+          ["Total Respons", data.response.total],
+          ["Kepala Rutan Hadir", data.response.hadir],
+          ["Tidak Hadir", data.response.tidakHadir],
+          ["Diwakilkan", data.response.diwakilkan],
+        ],
+        headStyles: { fillColor: [37, 99, 235] }, // blue-600
+        margin: { top: 40 }
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+
+      // Capture and add charts
+      if (pieChartRef.current && barChartRef.current) {
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Visualisasi Data", 14, finalY);
+
+        const chartWidth = 85;
+
+        // Capture Pie Chart
+        const pieEl = pieChartRef.current;
+        const pieRatio = pieEl.offsetHeight / pieEl.offsetWidth;
+        const pieHeight = chartWidth * pieRatio;
+        const pieImgData = await toPng(pieEl, { pixelRatio: 2, backgroundColor: '#ffffff' });
+        doc.addImage(pieImgData, 'PNG', 14, finalY + 10, chartWidth, pieHeight);
+
+        // Capture Bar Chart
+        const barEl = barChartRef.current;
+        const barRatio = barEl.offsetHeight / barEl.offsetWidth;
+        const barHeight = chartWidth * barRatio;
+        const barImgData = await toPng(barEl, { pixelRatio: 2, backgroundColor: '#ffffff' });
+        doc.addImage(barImgData, 'PNG', 110, finalY + 10, chartWidth, barHeight);
+
+        doc.setFontSize(10);
+        doc.text("Rasio Pengisian Agenda", 14, finalY + pieHeight + 15);
+        doc.text("Distribusi Respons", 110, finalY + barHeight + 15);
+      }
+
+      doc.save(`statistik-agenda-${new Date().getTime()}.pdf`);
+      toast.success("Laporan PDF berhasil diunduh");
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal mengekspor PDF");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -132,8 +183,18 @@ export default function StatistikPage() {
             Ringkasan data agenda dan partisipasi
           </p>
         </div>
-        <Button onClick={exportPDF} variant="outline" className="shadow-sm">
-          <Download className="mr-2 h-4 w-4" /> Export PDF
+        <Button
+          onClick={exportPDF}
+          variant="outline"
+          className="shadow-sm"
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          {isExporting ? "Memproses..." : "Export PDF"}
         </Button>
       </div>
 
@@ -157,7 +218,7 @@ export default function StatistikPage() {
             <CardTitle>Rasio Pengisian Agenda</CardTitle>
             <CardDescription>Perbandingan agenda selesai vs menunggu</CardDescription>
           </CardHeader>
-          <CardContent className="h-64">
+          <CardContent className="h-64" ref={pieChartRef}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -185,7 +246,7 @@ export default function StatistikPage() {
             <CardTitle>Distribusi Respons</CardTitle>
             <CardDescription>Statistik kehadiran Kepala Rutan</CardDescription>
           </CardHeader>
-          <CardContent className="h-64">
+          <CardContent className="h-64" ref={barChartRef}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={responseData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
