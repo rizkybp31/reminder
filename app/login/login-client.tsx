@@ -13,13 +13,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Mail, Lock, ShieldCheck } from "lucide-react";
 
 import logo from "@/public/logo.png";
 import kemenimipas from "@/public/kemenimipas.png";
 import ditjenpas from "@/public/ditjenpas.png";
 import rutan from "@/public/rutan.jpeg";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import getFriendlyErrorMessage from "@/utils/getFriendlyErrorMessage";
@@ -61,125 +61,112 @@ export default function LoginClient() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-      {/* Background Image Container */}
-      <div className="absolute inset-0 z-0 text-white">
+    <div className="relative h-screen min-h-[450px] flex items-center justify-center p-4 bg-slate-900 overflow-hidden">
+      {/* PROFESSIONAL BACKGROUND SYSTEM */}
+      <div className="absolute inset-0 z-0">
         <Image
           src={rutan}
-          alt="Background image"
+          alt="Rutan Background"
           fill
           priority
-          className="object-cover"
+          className="object-cover opacity-80"
         />
-        {/* Dark Overlay agar teks tetap terbaca */}
-        <div className="absolute inset-0 bg-slate-950/40 dark:bg-slate-950/60" />
+        <div className="absolute inset-0 bg-blue-950/40 backdrop-blur-[4px]" />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md z-10"
+        className="w-full max-w-[360px] z-10"
       >
-        {/* GLASS CARD EFFECT */}
-        <Card className="bg-white/10 dark:bg-slate-900/20 backdrop-blur-xl border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] ring-1 ring-white/20">
-          <CardHeader className="space-y-4">
-            <div className="flex justify-center">
-              <div className="flex items-center justify-center gap-4 bg-white/10 p-2 rounded-2xl backdrop-blur-md">
-                <Image
-                  src={kemenimipas}
-                  alt="logo kemenimipas"
-                  width={40}
-                  height={40}
-                />
-                <Image
-                  src={ditjenpas}
-                  alt="logo ditjenpas"
-                  width={40}
-                  height={40}
-                />
-                <Image src={logo} alt="logo rutan" width={40} height={40} />
-              </div>
+        {/* SEMI-TRANSPARENT GLASS CARD */}
+        <Card className="bg-white/90 backdrop-blur-xl border-white/40 shadow-2xl overflow-hidden rounded-[2rem] border-2">
+          {/* Extremely Compact Header */}
+          <CardHeader className="pt-6 pb-2 text-center space-y-3">
+            <div className="flex justify-center items-center gap-3">
+              <Image src={kemenimipas} alt="logo" width={28} height={28} className="drop-shadow-sm" />
+              <Image src={ditjenpas} alt="logo" width={28} height={28} className="drop-shadow-sm" />
+              <Image src={logo} alt="logo" width={28} height={28} className="drop-shadow-sm" />
             </div>
-            <div className="text-center space-y-2">
-              <CardTitle className="text-2xl font-bold text-white drop-shadow-md">
-                SISDAPIM RUSARANG
+
+            <div className="space-y-0">
+              <CardTitle className="text-xl font-black text-slate-900 tracking-tight uppercase">
+                SISDAPIM <span className="text-blue-600">RUSARANG</span>
               </CardTitle>
-              <CardDescription className="text-white/80">
-                Silakan login untuk melanjutkan
+              <CardDescription className="text-slate-500 font-bold tracking-widest text-[7px] uppercase opacity-80">
+                Portal Agenda Pimpinan
               </CardDescription>
             </div>
           </CardHeader>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <CardContent className="px-7 pb-8 pt-2">
+            <AnimatePresence mode="wait">
               {error && (
-                <Alert
-                  variant="destructive"
-                  className="bg-red-500/20 backdrop-blur-md border-red-500/50 text-white"
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mb-3"
                 >
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    {getFriendlyErrorMessage(error)}
-                  </AlertDescription>
-                </Alert>
+                  <Alert variant="destructive" className="py-1 px-3 bg-red-50 border-red-100 rounded-lg">
+                    <AlertDescription className="text-[9px] font-bold leading-none py-1 text-red-800">
+                      {getFriendlyErrorMessage(error)}
+                    </AlertDescription>
+                  </Alert>
+                </motion.div>
               )}
+            </AnimatePresence>
 
-              <FieldGroup className="space-y-4">
-                <Field className="space-y-1.5">
-                  <FieldLabel htmlFor="email" className="text-white">
-                    Email
-                  </FieldLabel>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="space-y-3">
+                <div className="relative group">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                    <Mail className="h-3.5 w-3.5" />
+                  </div>
                   <Input
-                    id="email"
                     type="email"
-                    placeholder="kepala.seksi@rutan.go.id"
+                    placeholder="Email Instansi"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
                     required
-                    className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:bg-white/20 transition-all"
+                    className="pl-10 h-10 bg-slate-50 border-slate-200 focus:bg-white focus:ring-4 focus:ring-blue-600/5 transition-all rounded-xl text-xs font-semibold"
                   />
-                </Field>
+                </div>
 
-                <Field className="space-y-1.5">
-                  <FieldLabel htmlFor="password" className="text-white">
-                    Password
-                  </FieldLabel>
+                <div className="relative group">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                    <Lock className="h-3.5 w-3.5" />
+                  </div>
                   <Input
-                    id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Kata Sandi"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
                     required
-                    className="h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:bg-white/20 transition-all"
+                    className="pl-10 h-10 bg-slate-50 border-slate-200 focus:bg-white focus:ring-4 focus:ring-blue-600/5 transition-all rounded-xl text-xs font-semibold"
                   />
-                </Field>
-              </FieldGroup>
+                </div>
+              </div>
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-white hover:bg-white/90 text-slate-900 font-semibold shadow-lg"
+                className="w-full h-11 bg-slate-900 hover:bg-blue-600 text-white font-black rounded-xl shadow-lg transition-all active:scale-[0.98] mt-1 text-[10px] uppercase tracking-widest"
                 disabled={loading}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  "Login"
-                )}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Sign In</div>}
               </Button>
             </form>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+              <p className="text-slate-400 text-[8px] font-black tracking-[0.2em] opacity-60">
+                SISDAPIM RUSARANG &copy; 2026
+              </p>
+            </div>
           </CardContent>
         </Card>
-
-        <p className="text-center text-white/60 text-xs mt-6 drop-shadow-sm">
-          © 2026 Sistem Reminder Rutan. All rights reserved.
-        </p>
       </motion.div>
     </div>
   );
