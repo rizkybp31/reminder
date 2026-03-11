@@ -8,7 +8,8 @@ import {
   BarChart3,
   Users,
   Plus,
-  Menu, // Icon Burger
+  Menu,
+  ScrollText, // Untuk Log Aktivitas
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
@@ -95,6 +96,7 @@ const NavigationBar = () => {
   const [open, setOpen] = useState(false);
 
   const isKepalaRutan = session?.user?.role === "kepala_rutan";
+  const isSuperUser = session?.user?.role === "superuser";
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
@@ -124,13 +126,19 @@ const NavigationBar = () => {
       name: "Statistik",
       href: "/dashboard/statistics",
       icon: BarChart3,
-      show: isKepalaRutan,
+      show: isKepalaRutan || isSuperUser,
     },
     {
       name: "User",
       href: "/dashboard/users",
       icon: Users,
-      show: isKepalaRutan,
+      show: isSuperUser,
+    },
+    {
+      name: "Log",
+      href: "/dashboard/activity-logs",
+      icon: ScrollText,
+      show: isSuperUser,
     },
   ];
 
@@ -228,7 +236,7 @@ const NavigationBar = () => {
                 SISDAPIM RUSARANG
               </h1>
               <p className="text-[10px] text-muted-foreground uppercase">
-                {isKepalaRutan ? "Kepala Rutan" : "Kepala Seksi"}
+                {isSuperUser ? "Super User" : isKepalaRutan ? "Kepala Rutan" : "Kepala Seksi"}
               </p>
             </div>
           </div>

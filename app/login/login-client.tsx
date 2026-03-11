@@ -19,6 +19,7 @@ import logo from "@/public/logo.png";
 import kemenimipas from "@/public/kemenimipas.png";
 import ditjenpas from "@/public/ditjenpas.png";
 import rutan from "@/public/rutan.jpeg";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import getFriendlyErrorMessage from "@/utils/getFriendlyErrorMessage";
@@ -62,7 +63,7 @@ export default function LoginClient() {
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
       {/* Background Image Container */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 text-white">
         <Image
           src={rutan}
           alt="Background image"
@@ -74,7 +75,12 @@ export default function LoginClient() {
         <div className="absolute inset-0 bg-slate-950/40 dark:bg-slate-950/60" />
       </div>
 
-      <div className="w-full max-w-md z-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md z-10"
+      >
         {/* GLASS CARD EFFECT */}
         <Card className="bg-white/10 dark:bg-slate-900/20 backdrop-blur-xl border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] ring-1 ring-white/20">
           <CardHeader className="space-y-4">
@@ -174,7 +180,7 @@ export default function LoginClient() {
         <p className="text-center text-white/60 text-xs mt-6 drop-shadow-sm">
           © 2026 Sistem Reminder Rutan. All rights reserved.
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

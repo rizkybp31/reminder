@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "kepala_rutan") {
+    if (!session || (session.user.role !== "kepala_rutan" && session.user.role !== "superuser")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

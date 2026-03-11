@@ -1,8 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Loader2, Download, FileBarChart2 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { Button } from "@/components/ui/button";
 
 type Statistik = {
   agenda: {
@@ -69,11 +85,57 @@ export default function StatistikPage() {
       ? (data.response.hadir / data.response.total) * 100
       : 0;
 
+  const agendaData = [
+    { name: "Selesai", value: data.agenda.responded, color: "#10b981" },
+    { name: "Menunggu", value: data.agenda.pending, color: "#f59e0b" },
+  ];
+
+  const responseData = [
+    { name: "Hadir", total: data.response.hadir, color: "#10b981" },
+    { name: "Tidak Hadir", total: data.response.tidakHadir, color: "#ef4444" },
+    { name: "Diwakilkan", total: data.response.diwakilkan, color: "#3b82f6" },
+  ];
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Laporan Statistik SISDAPIM RUSARANG", 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")}`, 14, 30);
+
+    // @ts-ignore
+    doc.autoTable({
+      startY: 40,
+      head: [["Kategori", "Total"]],
+      body: [
+        ["Total Agenda", data.agenda.total],
+        ["Agenda Selesai", data.agenda.responded],
+        ["Agenda Menunggu", data.agenda.pending],
+        ["Total Respons", data.response.total],
+        ["Kepala Rutan Hadir", data.response.hadir],
+        ["Tidak Hadir", data.response.tidakHadir],
+        ["Diwakilkan", data.response.diwakilkan],
+      ],
+    });
+
+    doc.save(`statistik-agenda-${new Date().getTime()}.pdf`);
+  };
+
   return (
-    <div className="space-y-8 p-4 md:p-8">
-      <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-        Statistik
-      </h1>
+    <div className="max-w-6xl mx-auto space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Statistik
+          </h1>
+          <p className="text-slate-500">
+            Ringkasan data agenda dan partisipasi
+          </p>
+        </div>
+        <Button onClick={exportPDF} variant="outline" className="shadow-sm">
+          <Download className="mr-2 h-4 w-4" /> Export PDF
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <InfoCard title="Total Agenda" value={data.agenda.total} />
@@ -89,18 +151,57 @@ export default function StatistikPage() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Progress Agenda</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProgressBar
-            label="Agenda Terjawab"
-            value={agendaProgress}
-            color="bg-green-600"
-          />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Rasio Pengisian Agenda</CardTitle>
+            <CardDescription>Perbandingan agenda selesai vs menunggu</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={agendaData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {agendaData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribusi Respons</CardTitle>
+            <CardDescription>Statistik kehadiran Kepala Rutan</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={responseData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                  {responseData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>

@@ -78,7 +78,7 @@ export default function EditUserPage() {
     if (params.id) fetchUser();
   }, [params.id, router]);
 
-  if (session?.user?.role !== "kepala_rutan") {
+  if (session?.user?.role !== "superuser") {
     return (
       <div className="text-center py-20 text-muted-foreground">
         Anda tidak memiliki akses ke halaman ini

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 const CreateAgenda = () => {
@@ -26,7 +27,9 @@ const CreateAgenda = () => {
 
   if (status === "loading") return null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -87,15 +90,16 @@ const CreateAgenda = () => {
                 placeholder="Masukkan nama agenda"
               />
             </Field>
-
+            
             <Field>
               <FieldLabel>Deskripsi</FieldLabel>
-              <Input
+              <Textarea
                 name="description"
                 required
                 value={form.description}
                 onChange={handleChange}
                 placeholder="Masukkan deskripsi agenda"
+                rows={4}
               />
             </Field>
 

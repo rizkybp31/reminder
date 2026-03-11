@@ -17,6 +17,7 @@ enum Role {
   kepala
   kepala_seksi
   kepala_rutan
+  superuser
 }
 
 enum StatusAgenda {
@@ -44,8 +45,24 @@ model User {
   // Relations
   agendasCreated Agenda[] @relation("CreatedBy")
   responses      Response[]
+  activityLogs   ActivityLog[]
 
   @@map("users")
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  action    String
+  details   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@map("activity_logs")
 }
 
 model Agenda {

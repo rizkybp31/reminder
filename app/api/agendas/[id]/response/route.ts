@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/whatsapp";
+import { logActivity } from "@/lib/logger";
 
 // Paksa route agar selalu dinamis
 export const dynamic = "force-dynamic";
@@ -21,10 +22,10 @@ export async function POST(
 
     const session = await getServerSession(authOptions);
 
-    // Proteksi: Hanya Kepala Rutan yang bisa memberi respon
-    if (!session || session.user.role !== "kepala_rutan") {
+    // Proteksi: Hanya Kepala Rutan atau Superuser yang bisa memberi respon
+    if (!session || (session.user.role !== "kepala_rutan" && session.user.role !== "superuser")) {
       return NextResponse.json(
-        { error: "Hanya Kepala Rutan yang dapat merespons agenda" },
+        { error: "Hanya Kepala Rutan atau Superuser yang dapat merespons agenda" },
         { status: 403 },
       );
     }
@@ -88,6 +89,12 @@ export async function POST(
       });
     }
 
+    await logActivity(
+      session.user.id,
+      "RESPOND_AGENDA",
+      `Memberikan respons (${responseType}) pada agenda: ${agenda.title}`,
+    );
+
     // Ambil data pembuat agenda (Creator) untuk dikirimi WA
     const creator = await prisma.user.findUnique({
       where: { id: agenda.createdById },
@@ -142,10 +149,10 @@ export async function POST(
       await sendNotification(
         creator.phoneNumber,
         `📢 *UPDATE RESPONS AGENDA*\n\n` +
-          `Halo *${creator.name}*, agenda Anda telah direspons oleh Kepala Rutan:\n\n` +
-          `⚖️ *STATUS:* *${statusEmoji} ${statusLabel}*\n\n` +
-          detailAgendaMsg +
-          `\nSilakan cek detail lengkapnya di dashboard.`,
+        `Halo *${creator.name}*, agenda Anda telah direspons oleh Kepala Rutan:\n\n` +
+        `⚖️ *STATUS:* *${statusEmoji} ${statusLabel}*\n\n` +
+        detailAgendaMsg +
+        `\nSilakan cek detail lengkapnya di dashboard.`,
       );
     }
 
@@ -160,9 +167,9 @@ export async function POST(
         await sendNotification(
           delegateUser.phoneNumber,
           `📝 *PENUGASAN DELEGASI*\n\n` +
-            `Halo *${delegateUser.name}*, Anda ditugaskan oleh Kepala Rutan untuk menghadiri agenda berikut:\n\n` +
-            detailAgendaMsg +
-            `\nMohon kehadirannya tepat waktu.`,
+          `Halo *${delegateUser.name}*, Anda ditugaskan oleh Kepala Rutan untuk menghadiri agenda berikut:\n\n` +
+          detailAgendaMsg +
+          `\nMohon kehadirannya tepat waktu.`,
         );
       }
     }

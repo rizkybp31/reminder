@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { supabase } from "@/lib/supabase-server";
 import { sendNotification } from "@/lib/whatsapp";
+import { logActivity } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     const where: Prisma.AgendaWhereInput = {};
 
-    if (userRole !== "kepala_rutan") {
+    if (userRole !== "kepala_rutan" && userRole !== "superuser") {
       where.OR = [
         { status: "pending" },
         { status: "responded" },
@@ -141,6 +142,12 @@ export async function POST(req: NextRequest) {
         attachmentUrl,
       },
     });
+
+    await logActivity(
+      session.user.id,
+      "CREATE_AGENDA",
+      `Membuat agenda: ${title}`,
+    );
 
     // Cari data Kepala Rutan
     const kepalaRutan = await prisma.user.findFirst({

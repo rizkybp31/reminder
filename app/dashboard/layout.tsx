@@ -2,6 +2,7 @@ import NavigationBar from "../components/nav-bar";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import PageTransition from "@/components/page-transition";
 
 const DashboardLayout = async ({
   children,
@@ -17,7 +18,9 @@ const DashboardLayout = async ({
   return (
     <>
       <NavigationBar />
-      <main className="container py-6 px-4">{children}</main>
+      <main className="container py-6 px-4">
+        <PageTransition>{children}</PageTransition>
+      </main>
     </>
   );
 };

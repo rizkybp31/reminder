@@ -4,8 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { logActivity } from "@/lib/logger";
 
-// GET - List all users (Kepala Rutan only)
+// GET - List all users (Superuser only)
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -14,8 +15,8 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only Kepala Rutan can access
-    if (session.user.role !== "kepala_rutan") {
+    // Only Superuser can access
+    if (session.user.role !== "superuser") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -43,7 +44,7 @@ export async function GET() {
   }
 }
 
-// POST - Create new user (Kepala Rutan only)
+// POST - Create new user (Superuser only)
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -52,10 +53,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only Kepala Rutan can create users
-    if (session.user.role !== "kepala_rutan") {
+    // Only Superuser can create users
+    if (session.user.role !== "superuser") {
       return NextResponse.json(
-        { error: "Hanya Kepala Rutan yang dapat menambah user" },
+        { error: "Hanya Superuser yang dapat menambah user" },
         { status: 403 },
       );
     }
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validasi role
-    if (!["kepala_rutan", "kepala_seksi", "kepala"].includes(role)) {
+    if (!["kepala_rutan", "kepala_seksi", "kepala", "superuser"].includes(role)) {
       return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
     }
 
@@ -139,6 +140,12 @@ export async function POST(req: NextRequest) {
         createdAt: true,
       },
     });
+
+    await logActivity(
+      session.user.id,
+      "CREATE_USER",
+      `Membuat user baru: ${email}`,
+    );
 
     console.log("✅ User created:", user.email);
 

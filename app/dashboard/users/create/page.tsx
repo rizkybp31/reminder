@@ -41,7 +41,7 @@ export default function CreateUserPage() {
   });
 
   // Proteksi UI
-  if (session?.user?.role !== "kepala_rutan") {
+  if (session?.user?.role !== "superuser") {
     return (
       <div className="text-center py-20 text-muted-foreground">
         Anda tidak memiliki akses ke halaman ini

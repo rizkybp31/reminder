@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { supabase } from "@/lib/supabase-server";
+import { logActivity } from "@/lib/logger";
 
 // GET single agenda
 export async function GET(
@@ -90,6 +91,17 @@ export async function PUT(
       );
     }
 
+    // 2. Authorization check: Only owner or admin can update
+    const isAdmin = session.user.role === "kepala_rutan" || session.user.role === "superuser";
+    const isOwner = existingAgenda.createdById === session.user.id;
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json(
+        { error: "Anda tidak memiliki akses untuk mengubah agenda ini" },
+        { status: 403 },
+      );
+    }
+
     // 2. Logika Update File jika ada file baru
     if (file && file.size > 0) {
       // Hapus file lama dari storage (opsional)
@@ -134,6 +146,12 @@ export async function PUT(
       },
     });
 
+    await logActivity(
+      session.user.id,
+      "UPDATE_AGENDA",
+      `Memperbarui agenda: ${title}`,
+    );
+
     return NextResponse.json(updatedAgenda);
   } catch (error: unknown) {
     console.error("UPDATE ERROR:", error);
@@ -150,6 +168,9 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { id } = await params;
 
@@ -162,16 +183,33 @@ export async function DELETE(
       return NextResponse.json({ error: "Agenda not found" }, { status: 404 });
     }
 
-    if (agenda.response) {
+    // Authorization check: Only owner or admin can delete
+    const isAdmin = session.user.role === "kepala_rutan" || session.user.role === "superuser";
+    const isOwner = agenda.createdById === session.user.id;
+
+    if (!isAdmin && !isOwner) {
       return NextResponse.json(
-        { error: "Tidak dapat menghapus agenda yang sudah direspons" },
-        { status: 400 },
+        { error: "Anda tidak memiliki akses untuk menghapus agenda ini" },
+        { status: 403 },
+      );
+    }
+
+    if (agenda.response && session.user.role !== "superuser") {
+      return NextResponse.json(
+        { error: "Hanya Superuser yang dapat menghapus agenda yang sudah direspons" },
+        { status: 403 },
       );
     }
 
     await prisma.agenda.delete({
       where: { id },
     });
+
+    await logActivity(
+      session.user.id,
+      "DELETE_AGENDA",
+      `Menghapus agenda: ${agenda.title}`,
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

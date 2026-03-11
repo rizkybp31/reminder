@@ -16,7 +16,7 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user.role !== "kepala_rutan") {
+  if (session.user.role !== "superuser") {
     return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
   }
 
@@ -42,7 +42,7 @@ export async function PUT(
     const { id: userId } = await params;
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "kepala_rutan") {
+    if (!session?.user || session.user.role !== "superuser") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -109,7 +109,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "kepala_rutan") {
+    if (session.user.role !== "superuser") {
       return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
     }
 

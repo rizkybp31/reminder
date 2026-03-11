@@ -78,11 +78,13 @@ export default function AgendaDetailPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const isKepalaRutan = session?.user?.role === "kepala_rutan";
+  const isSuperUser = session?.user?.role === "superuser";
+  const isAdmin = isKepalaRutan || isSuperUser;
 
   useEffect(() => {
     fetchAgenda();
-    if (isKepalaRutan) fetchKepalaSeksi();
-  }, []);
+    if (isAdmin) fetchKepalaSeksi();
+  }, [isAdmin]);
 
   const fetchAgenda = async () => {
     try {
@@ -236,7 +238,7 @@ export default function AgendaDetailPage() {
           </div>
 
           {/* FORM RESPONS */}
-          {isKepalaRutan && (
+          {isAdmin && (
             <Card>
               <CardHeader>
                 <CardTitle>Respons Kehadiran</CardTitle>

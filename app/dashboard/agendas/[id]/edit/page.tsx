@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 
 const EditAgendaPage = () => {
@@ -58,7 +59,9 @@ const EditAgendaPage = () => {
     fetchAgenda();
   }, [agendaId, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -130,11 +133,12 @@ const EditAgendaPage = () => {
 
             <Field>
               <FieldLabel>Description</FieldLabel>
-              <Input
+              <Textarea
                 name="description"
                 required
                 value={form.description}
                 onChange={handleChange}
+                rows={4}
               />
             </Field>
 

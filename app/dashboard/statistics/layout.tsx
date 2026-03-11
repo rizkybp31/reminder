@@ -11,7 +11,7 @@ const DashboardLayout = async ({
 
   const roleStatus = session?.user.role;
 
-  if (roleStatus !== "kepala_rutan") {
+  if (roleStatus !== "kepala_rutan" && roleStatus !== "superuser") {
     redirect("/dashboard");
   }
 

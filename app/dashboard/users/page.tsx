@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -34,6 +35,16 @@ export default function UsersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null); // State untuk loading pada tombol delete spesifik
 
   const router = useRouter();
+  const { data: session } = useSession();
+
+  // Proteksi UI
+  if (session?.user?.role !== "superuser") {
+    return (
+      <div className="text-center py-20 text-muted-foreground font-medium">
+        Anda tidak memiliki akses ke halaman ini.
+      </div>
+    );
+  }
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -80,21 +91,26 @@ export default function UsersPage() {
   }, []);
 
   return (
-    <div className="p-4 md:p-8 w-auto mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h1 className="text-3xl font-bold">Manajemen User</h1>
-        <Button onClick={() => router.push("/dashboard/users/create")}>
+    <div className="max-w-6xl mx-auto space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Manajemen User
+          </h1>
+          <p className="text-slate-500">
+            Daftar user yang terdaftar dalam sistem
+          </p>
+        </div>
+        <Button
+          onClick={() => router.push("/dashboard/users/create")}
+          className="shadow-md"
+        >
           + Tambah User
         </Button>
       </div>
 
       <Card>
-        <CardHeader>
-          <p className="text-sm text-muted-foreground">
-            Daftar user yang terdaftar dalam sistem
-          </p>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {loading ? (
             <>
               <div className="flex flex-col items-center justify-center h-64 gap-3">
