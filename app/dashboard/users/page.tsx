@@ -163,7 +163,7 @@ export default function UsersPage() {
                                 variant="destructive"
                                 disabled={
                                   deletingId === user.id ||
-                                  user.role === "kepala_rutan"
+                                  user.role === "superuser"
                                 } // Disable tombol saat loading
                               >
                                 {deletingId === user.id ? (

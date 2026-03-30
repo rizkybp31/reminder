@@ -144,35 +144,41 @@ export async function POST(
       (fileLink ? `📎 *LAMPIRAN:* ${fileLink}\n` : "") +
       (notes ? `💬 *CATATAN:* ${notes}\n` : "");
 
-    // 1. Kirim Notifikasi ke Pembuat Agenda
-    if (creator?.phoneNumber) {
-      await sendNotification(
-        creator.phoneNumber,
-        `📢 *UPDATE RESPONS AGENDA*\n\n` +
-        `Halo *${creator.name}*, agenda Anda telah direspons oleh Kepala Rutan:\n\n` +
-        `⚖️ *STATUS:* *${statusEmoji} ${statusLabel}*\n\n` +
-        detailAgendaMsg +
-        `\nSilakan cek detail lengkapnya di dashboard.`,
-      );
-    }
+    // 1. Ambil semua user yang memiliki nomor telepon
+    const allUsers = await prisma.user.findMany({
+      where: {
+        phoneNumber: { not: null },
+      },
+      select: { phoneNumber: true, name: true, email: true },
+    });
 
-    // 2. Kirim Notifikasi ke Penerima Delegasi (Jika ada)
-    if (responseType === "diwakilkan" && delegateEmail) {
-      const delegateUser = await prisma.user.findUnique({
-        where: { email: delegateEmail },
-        select: { phoneNumber: true, name: true },
-      });
+    // 2. Kirim notifikasi ke semua user agar semua tahu/devisi tahu siapa yang mewakili
+    const notificationPromises = allUsers.map(async (user) => {
+      if (!user.phoneNumber) return;
 
-      if (delegateUser?.phoneNumber) {
-        await sendNotification(
-          delegateUser.phoneNumber,
-          `📝 *PENUGASAN DELEGASI*\n\n` +
-          `Halo *${delegateUser.name}*, Anda ditugaskan oleh Kepala Rutan untuk menghadiri agenda berikut:\n\n` +
+      let message = "";
+      
+      if (responseType === "diwakilkan" && user.email === delegateEmail) {
+        message = `📝 *PENUGASAN DELEGASI*\n\n` +
+          `Halo *${user.name}*, Anda ditugaskan oleh Kepala Rutan untuk menghadiri agenda berikut:\n\n` +
           detailAgendaMsg +
-          `\nMohon kehadirannya tepat waktu.`,
-        );
+          `\nMohon kehadirannya tepat waktu.`;
+      } else {
+        message = `📢 *UPDATE RESPONS AGENDA*\n\n` +
+          `Halo *${user.name}*, agenda berikut telah direspons oleh Kepala Rutan:\n\n` +
+          `⚖️ *STATUS:* *${statusEmoji} ${statusLabel}*\n\n` +
+          detailAgendaMsg +
+          `\nSilakan cek detail lengkapnya di dashboard.`;
       }
-    }
+
+      try {
+        await sendNotification(user.phoneNumber, message);
+      } catch (error) {
+        console.error(`Gagal mengirim notifikasi ke ${user.name}:`, error);
+      }
+    });
+
+    await Promise.allSettled(notificationPromises);
 
     return NextResponse.json({ success: true, response }, { status: 201 });
   } catch (error) {

@@ -6,6 +6,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { supabase } from "@/lib/supabase-server";
 import { sendNotification } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/logger";
+import { agendaSchema } from "@/lib/validations/agenda";
 
 export const dynamic = "force-dynamic";
 
@@ -85,20 +86,21 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData();
-
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const location = formData.get("location") as string;
-    const startDateTime = formData.get("startDateTime") as string;
-    const endDateTime = formData.get("endDateTime") as string;
-    const file = formData.get("attachment") as File | null;
-
-    if (!title || !startDateTime || !endDateTime) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+    const body = Object.fromEntries(formData.entries());
+    
+    // Validasi menggunakan Zod
+    const validation = agendaSchema.safeParse({
+      ...body,
+      attachmentUrl: undefined // handled separately
+    });
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0]?.message || "Input tidak valid";
+      return NextResponse.json({ error: firstError }, { status: 400 });
     }
+
+    const { title, description, location, startDateTime, endDateTime } = validation.data;
+    const file = formData.get("attachment") as File | null;
 
     let attachmentUrl: string | null = null;
 

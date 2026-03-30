@@ -130,17 +130,14 @@ export async function DELETE(
       );
     }
 
-    if (userToDelete.role === "kepala_rutan") {
-      const adminCount = await prisma.user.count({
-        where: { role: "kepala_rutan" },
-      });
-      if (adminCount <= 1) {
-        return NextResponse.json(
-          { error: "Admin terakhir tidak bisa dihapus" },
-          { status: 400 },
-        );
-      }
+    if (userToDelete.role === "superuser") {
+      return NextResponse.json(
+        { error: "Super User tidak bisa dihapus" },
+        { status: 400 },
+      );
     }
+
+
 
     await prisma.user.delete({ where: { id: userId } });
     return NextResponse.json({ success: true });

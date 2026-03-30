@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { logActivity } from "@/lib/logger";
+import { userSchema } from "@/lib/validations/user";
 
 // GET - List all users (Superuser only)
 export async function GET() {
@@ -62,45 +63,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, email, password, role, seksiName, phoneNumber } = body;
-
-    // Validasi
-    if (!name || !email || !password || !role || !phoneNumber) {
-      return NextResponse.json(
-        { error: "Nama, email, password, dan role harus diisi" },
-        { status: 400 },
-      );
+    
+    // Validasi menggunakan Zod
+    const validation = userSchema.safeParse(body);
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0]?.message || "Input tidak valid";
+      return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    // Validasi email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Format email tidak valid" },
-        { status: 400 },
-      );
-    }
-
-    // Validasi password length
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password minimal 6 karakter" },
-        { status: 400 },
-      );
-    }
-
-    // Validasi role
-    if (!["kepala_rutan", "kepala_seksi", "kepala", "superuser"].includes(role)) {
-      return NextResponse.json({ error: "Role tidak valid" }, { status: 400 });
-    }
-
-    // Jika role KEPALA_SEKSI, seksiName wajib diisi
-    if (role === "kepala_seksi" && !seksiName) {
-      return NextResponse.json(
-        { error: "Nama seksi harus diisi untuk Kepala Seksi" },
-        { status: 400 },
-      );
-    }
+    const { name, email, password, role, seksiName, phoneNumber } = validation.data;
 
     // Cek apakah email sudah digunakan
     const existingUser = await prisma.user.findUnique({
