@@ -249,7 +249,7 @@ export default function DashboardPage() {
                 </div>
 
                 <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                  {agenda.description}
+                  {agenda.description?.replace(/<[^>]*>/g, "") || ""}
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-500">

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const agendaSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
-  description: z.string().optional(),
+  description: z.string().default(""),
   location: z.string().min(2, "Lokasi minimal 2 karakter"),
   startDateTime: z.string().or(z.date()),
   endDateTime: z.string().or(z.date()),

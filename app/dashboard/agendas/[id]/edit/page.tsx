@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 import Link from "next/link";
 
 const EditAgendaPage = () => {
@@ -133,12 +134,10 @@ const EditAgendaPage = () => {
 
             <Field>
               <FieldLabel>Description</FieldLabel>
-              <Textarea
-                name="description"
-                required
+              <RichTextEditor
                 value={form.description}
-                onChange={handleChange}
-                rows={4}
+                onChange={(value) => setForm({ ...form, description: value })}
+                placeholder="Masukkan deskripsi agenda dengan format rapi"
               />
             </Field>
 

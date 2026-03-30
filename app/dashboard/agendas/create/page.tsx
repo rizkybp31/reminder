@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
 
 const CreateAgenda = () => {
@@ -93,13 +94,10 @@ const CreateAgenda = () => {
             
             <Field>
               <FieldLabel>Deskripsi</FieldLabel>
-              <Textarea
-                name="description"
-                required
+              <RichTextEditor
                 value={form.description}
-                onChange={handleChange}
-                placeholder="Masukkan deskripsi agenda"
-                rows={4}
+                onChange={(value) => setForm({ ...form, description: value })}
+                placeholder="Masukkan deskripsi agenda dengan format rapi"
               />
             </Field>
 

@@ -140,7 +140,7 @@ export async function POST(
       `📍 *LOKASI:* ${agenda.location}\n` +
       `📅 *MULAI:* ${formattedStart}\n` +
       `🏁 *SELESAI:* ${formattedEnd}\n` +
-      `📝 *DESKRIPSI:* ${agenda.description}\n` +
+      `📝 *DESKRIPSI:* ${agenda.description?.replace(/<[^>]*>/g, "") || ""}\n` +
       (fileLink ? `📎 *LAMPIRAN:* ${fileLink}\n` : "") +
       (notes ? `💬 *CATATAN:* ${notes}\n` : "");
 

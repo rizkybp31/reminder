@@ -73,11 +73,11 @@ export async function PUT(
     const { id: agendaId } = await params;
 
     // Ambil data dari formData
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const location = formData.get("location") as string;
-    const startDateTime = formData.get("startDateTime") as string;
-    const endDateTime = formData.get("endDateTime") as string;
+    const title = (formData.get("title") as string) || "";
+    const description = (formData.get("description") as string) || "";
+    const location = (formData.get("location") as string) || "";
+    const startDateTime = (formData.get("startDateTime") as string) || "";
+    const endDateTime = (formData.get("endDateTime") as string) || "";
     const file = formData.get("attachment") as File | null;
     let attachmentUrl = formData.get("attachmentUrl") as string | null;
 

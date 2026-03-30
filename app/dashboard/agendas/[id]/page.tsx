@@ -195,7 +195,10 @@ export default function AgendaDetailPage() {
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-6">
-                <p>{agenda.description}</p>
+                <div 
+                  className="agenda-description"
+                  dangerouslySetInnerHTML={{ __html: agenda.description }} 
+                />
                 <Separator />
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
