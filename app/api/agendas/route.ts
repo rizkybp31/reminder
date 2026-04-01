@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase-server";
 import { sendNotification } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/logger";
 import { agendaSchema } from "@/lib/validations/agenda";
+import { stripHtml } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -188,7 +189,7 @@ export async function POST(req: NextRequest) {
         `📍 *LOKASI:* ${location}\n` +
         `📅 *MULAI:* ${formattedStart}\n` +
         `🏁 *SELESAI:* ${formattedEnd}\n` +
-        `📝 *DESKRIPSI:* ${description || "-"}\n` +
+        `📝 *DESKRIPSI:* ${stripHtml(description || "") || "-"}\n` +
         (attachmentUrl ? `📎 *LAMPIRAN PDF:* ${attachmentUrl}\n` : "") +
         `\nMohon segera melakukan pengecekan dan memberikan keputusan (Hadir/Delegasi) melalui dashboard aplikasi.`;
 

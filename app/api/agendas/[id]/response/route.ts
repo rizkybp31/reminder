@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendNotification } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/logger";
+import { stripHtml } from "@/lib/utils";
 
 // Paksa route agar selalu dinamis
 export const dynamic = "force-dynamic";
@@ -140,7 +141,7 @@ export async function POST(
       `📍 *LOKASI:* ${agenda.location}\n` +
       `📅 *MULAI:* ${formattedStart}\n` +
       `🏁 *SELESAI:* ${formattedEnd}\n` +
-      `📝 *DESKRIPSI:* ${agenda.description?.replace(/<[^>]*>/g, "") || ""}\n` +
+      `📝 *DESKRIPSI:* ${stripHtml(agenda.description || "")}\n` +
       (fileLink ? `📎 *LAMPIRAN:* ${fileLink}\n` : "") +
       (notes ? `💬 *CATATAN:* ${notes}\n` : "");
 
